@@ -205,6 +205,62 @@ HOOK_EOF
     fi
 fi
 
+# ── 4. Auto-Provision Missing Tool Adapters (Self-Healing) ──
+# If files were copied with 'cp -r dir/*' (which ignores dotfiles),
+# auto-generate the adapters so the repo is immediately functional.
+if [ ! -f ".cursorrules" ]; then
+    cat << 'EOF' > .cursorrules
+# Cursor Rules — Agent Harness
+Read `AGENTS.md` before doing any work in this repository.
+
+## Roles
+- You act according to `agents/leader.md` by default: coordinate, plan, verify.
+- To implement code, follow `agents/implementer.md` (exactly 1 feature at a time).
+- To review code, follow `agents/reviewer.md` (double-check quality & tests).
+- Before closing or committing, run the security checklist in `agents/security-reviewer.md`.
+
+## Non-Negotiable Rules
+1. Follow `TASKS.md` for task tracking.
+2. Follow `docs/architecture.md`, `docs/conventions.md`, and `docs/security.md`.
+3. Never hardcode credentials, secrets, or tokens.
+EOF
+    echo -e "  ${GREEN}✓${NC} Auto-provisioned missing .cursorrules"
+fi
+
+if [ ! -f ".windsurfrules" ]; then
+    cat << 'EOF' > .windsurfrules
+# Windsurf Rules — Agent Harness
+Read `AGENTS.md` before doing any work in this repository.
+
+## Roles
+- Act according to `agents/leader.md` by default.
+- Follow `agents/implementer.md` for coding (1 feature at a time).
+- Follow `agents/reviewer.md` for quality review and test validation.
+- Follow `agents/security-reviewer.md` for secret scanning and git safety.
+
+## Non-Negotiable Rules
+1. Follow `TASKS.md` for task selection.
+2. Follow `docs/architecture.md`, `docs/conventions.md`, and `docs/security.md`.
+3. Keep git clean and check `.gitignore`.
+EOF
+    echo -e "  ${GREEN}✓${NC} Auto-provisioned missing .windsurfrules"
+fi
+
+if [ ! -f ".github/copilot-instructions.md" ]; then
+    mkdir -p .github
+    cat << 'EOF' > .github/copilot-instructions.md
+# GitHub Copilot Instructions — Agent Harness
+Read `AGENTS.md` as the primary project navigation map.
+
+## Core Directives
+- **Workflow & Rules**: Follow `AGENTS.md` and `CHECKPOINTS.md`.
+- **Architecture**: Adhere strictly to `docs/architecture.md`. Do not bypass architectural layers.
+- **Code Style & Conventions**: Follow `docs/conventions.md`.
+- **Security**: Follow `docs/security.md` and `agents/security-reviewer.md`. Never hardcode secrets.
+EOF
+    echo -e "  ${GREEN}✓${NC} Auto-provisioned missing .github/copilot-instructions.md"
+fi
+
 echo ""
 echo -e "${BOLD}▸ Validating Harness Integrity...${NC}"
 
