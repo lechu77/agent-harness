@@ -11,6 +11,6 @@ Read `AGENTS.md` to orient yourself in this repository.
 - Anti-telephone rule: Subagents write full output to `progress/*.md` and return only a 1-line reference in chat.
 
 ## Startup Protocol
-1. Run `./init.sh` — must exit 0.
+1. Run test suite — must exit 0.
 2. Read `TASKS.md` and pick the next pending task.
 3. Read `progress/current.md`.

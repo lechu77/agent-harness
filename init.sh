@@ -308,6 +308,21 @@ if [ $FAIL -eq 0 ]; then
     echo -e "  ${BLUE}Next Step:${NC}"
     echo -e "  Open your tool (Antigravity, Cursor, Copilot, Windsurf, Claude Code)"
     echo -e "  and describe what you want to build. Your agents will handle the rest."
+    echo ""
+    
+    # Prompt to delete init.sh since it is run only once
+    if [ -t 0 ]; then
+        echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
+        echo -ne "${BOLD}Since init.sh is only run once, do you want to delete init.sh? [y/N]: ${NC}"
+        read -r DEL_INIT
+        if [[ "$DEL_INIT" =~ ^[Yy]$ ]]; then
+            echo -e "  ${GREEN}✓${NC} Removing init.sh..."
+            rm -f "$0"
+            echo -e "  ${GREEN}✓${NC} init.sh deleted. Happy vibecoding!"
+        else
+            echo -e "  ${GREEN}✓${NC} Kept init.sh in repository."
+        fi
+    fi
 else
     echo -e "  ${RED}${BOLD}✗ Setup encountered $FAIL issue(s). Please review above.${NC}"
 fi

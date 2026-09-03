@@ -60,4 +60,4 @@
 - [ ] `progress/history.md` has an entry for the latest completed session
 - [ ] Task status in `TASKS.md` is accurate
 - [ ] `progress/current.md` is reset to the empty template (if session complete)
-- [ ] `./init.sh` exits 0
+- [ ] Test suite and linters exit 0 with all passing tests
