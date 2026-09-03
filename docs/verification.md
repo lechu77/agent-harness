@@ -7,6 +7,7 @@ No claim without evidence. Every assertion of correctness must be backed by test
 - **Level 1 — Unit Tests**: Cover every public function. Test both success and failure paths. Assert specific values, not just 'no exception thrown.'
 - **Level 2 — Integration Tests**: Test module interactions. Use real I/O with isolated temp directories. Test the actual CLI/API interface, not internal functions.
 - **Level 3 — Smoke Tests**: Run the application end-to-end in a temp environment. Verify the user-facing behavior matches the feature spec.
+- **Isolated / Offline Test Execution**: All tests must execute cleanly without requiring external internet connectivity. Tests that make live external network calls are prohibited (use local test servers or isolated fixtures).
 
 ## Anti-Patterns
 - Testing that no exception was thrown, without checking the actual output.

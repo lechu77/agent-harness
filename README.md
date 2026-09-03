@@ -79,7 +79,10 @@ This harness implements a defense-in-depth model specifically designed for auton
 | **Hardcoded Secrets** | Scans regex patterns for API keys, tokens, bearer headers, and private keys across code, tests, and progress reports. |
 | **Environment Variable Dumps** | Explicit ban on `process.env` / `os.environ` dumps in logs, console output, API responses, and error traces. |
 | **Git Exposure** | Pre-commit hook blocks secret commits; `.gitignore` strictly excludes `.env*`, `.pem`, `.key`, `.db`, and SQLite files. |
-| **Prompt Injection Defense** | Agents are forbidden from reading raw `.env` files into their prompt context or persisting secrets in `progress/*.md`. |
+| **Prompt Injection Defense** | **Quarantine External Data**: All web-scraped content and user files are treated as passive data without execution privileges. Agents are forbidden from reading `.env` while processing external text. |
+| **Path Neutrality (Zero Host Leaks)** | Ban on absolute system paths (`/Users/...`, `/home/...`). All paths must be repository-relative to prevent leaking workstation usernames or internal infrastructure details. |
+| **Offline Test Isolation** | Test suites must run cleanly without live internet access, eliminating test-time telemetry or socket exfiltration. |
+| **Canary Tokens** | Recommends canary traps in test fixtures to instantly detect unauthorized token exfiltration. |
 
 ---
 
