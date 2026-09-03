@@ -21,24 +21,34 @@ Set it up **once**, and let your agents handle planning, coding, quality double-
 
 ## 1. Quick Start: Clone Once, Run Once
 
-Whenever you start a new project:
-
+### Option A: Starting a New Project from Scratch
 ```bash
 # 1. Clone this template into your new project directory
-git clone <your-template-repo-url> my-new-project
+git clone https://github.com/lechu77/agent-harness.git my-new-project
 cd my-new-project
 
-# 2. Run initial setup (ONCE)
+# 2. Run initial setup (detaches template git history, initializes clean repo)
 ./init.sh my-new-project
 
 # 3. Open your favorite AI tool and start building!
 ```
 
-### What `./init.sh` does during setup:
-1. **Detaches template git history** (`rm -rf .git`), runs `git init -b main`, and creates a clean baseline commit with zero git conflicts.
-2. **Resets progress files** (`progress/current.md` and `progress/history.md`).
-3. **Installs automated pre-commit hook** (`.git/hooks/pre-commit`) to automatically block staged API keys, passwords, or tokens.
-4. **Validates harness integrity** to ensure all agents and documentation are healthy.
+### Option B: Adding to an Existing Repository
+If you already have an existing project and want to equip it with this harness:
+```bash
+# 1. Copy the harness files into your existing project root
+# (AGENTS.md, TASKS.md, CHECKPOINTS.md, init.sh, agents/, docs/, progress/, etc.)
+
+# 2. Run setup in your existing project
+./init.sh
+
+# 3. init.sh detects your existing repo, preserves your git history 100%,
+#    and installs the pre-commit security hook!
+```
+
+### Smart Git Preservation
+- **Template repo detected**: `./init.sh` safely detaches the template git history so you start with a clean slate and no git conflicts.
+- **Existing project detected**: `./init.sh` **never** touches or deletes your `.git` folder. All existing branches, remotes, and commit history remain completely intact.
 
 Once this exits green, **you are done with setup forever**.
 
