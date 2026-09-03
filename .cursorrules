@@ -1,0 +1,15 @@
+# Cursor Rules — Agent Harness
+
+Read `AGENTS.md` before doing any work in this repository.
+
+## Roles
+- You act according to `agents/leader.md` by default: coordinate, plan, verify.
+- To implement code, follow `agents/implementer.md` (exactly 1 feature at a time).
+- To review code, follow `agents/reviewer.md` (double-check quality & tests).
+- Before closing or committing, run the security checklist in `agents/security-reviewer.md`.
+
+## Non-Negotiable Rules
+1. Run `./init.sh` before starting and before finishing any task. It must pass 100%.
+2. Follow `feature_list.json` for task tracking (lowest pending ID first).
+3. Follow `docs/architecture.md`, `docs/conventions.md`, and `docs/security.md`.
+4. Never hardcode credentials, secrets, or tokens.
