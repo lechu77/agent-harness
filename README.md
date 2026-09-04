@@ -48,34 +48,73 @@ If you already have an existing project and want to equip it with this harness:
 #    and installs the pre-commit security hook!
 ```
 
-### Smart Git Preservation
+### Smart Git Preservation & Self-Deletion
 - **Template repo detected**: `./init.sh` safely detaches the template git history so you start with a clean slate and no git conflicts.
 - **Existing project detected**: `./init.sh` **never** touches or deletes your `.git` folder. All existing branches, remotes, and commit history remain completely intact.
+- **Self-Deletion on Completion**: Once setup is verified, `init.sh` asks if you want to delete `init.sh`. You can answer `y` to remove it completely. Neither you nor the agents ever need it again.
 
 Once this exits green, **you are done with setup forever**.
 
 ---
 
-## 2. How the Agents Work Together
+## 2. How the Agents Work Together (Autonomous Guardrails)
 
 All agent roles reside in `agents/` and are read directly by your AI tool:
 
 ```
-Leader (Orchestrator)
-  │
-  ├── 1. Reads your prompt from chat and updates TASKS.md
-  │
-  ├── 2. Implementer (Feature Worker)
-  │      └── Writes production code + automated tests for exactly ONE task
-  │
-  ├── 3. Reviewer (Adversarial Quality Auditor — Double-Check)
-  │      └── Runs test suite independently, checks edge cases & CHECKPOINTS.md
-  │
-  └── 4. Security Reviewer (Extreme Cybersecurity & Exfiltration Gate)
-         └── Audits secrets, network egress whitelist, PII, package hallucinations, git exposure
+┌─────────────────────────────────────────────────────────────┐
+│ 1. USER: Types what to build in chat ("Create user auth...")│
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 2. LEADER (Orchestrator)                                    │
+│    • Decomposes request into discrete tasks in TASKS.md     │
+│    • Auto-fills architecture/security templates in docs/    │
+│    • Marks 1 active task: [/] in TASKS.md                   │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Delegates 1 task
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 3. IMPLEMENTER (Feature Worker)                             │
+│    • Writes production code + unit & integration tests      │
+│    • Runs project test suite (npm test, pytest, cargo test) │
+│    • Applies recovery protocol (git stash/diff) if broken   │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ Anti-telephone report
+                               ▼
+╔═════════════════════════════════════════════════════════════╗
+║                 AUTONOMOUS GUARDRAILS LOOP                  ║
+╠═════════════════════════════════════════════════════════════╣
+║                                                             ║
+║  [Guardrail 1: Code Sanitization & Quality Auditor]         ║
+║  ► REVIEWER AGENT (Adversarial)                             ║
+║    • Runs test runner independently via terminal tools      ║
+║    • Strips console.log, print(), and dangling TODOs        ║
+║    • Audits edge cases and architectural layer separation   ║
+║                                                             ║
+║  [Guardrail 2: Extreme Cybersecurity & Anti-Exfiltration]   ║
+║  ► SECURITY REVIEWER AGENT (Zero-Trust AppSec Gate)         ║
+║    • Scans regex for leaked tokens, keys & private certs    ║
+║    • Enforces zero-trust outbound domain whitelist          ║
+║    • Quarantines external web data (prompt injection defense)║
+║    • Verifies supply-chain packages (anti-slopsquatting)    ║
+║    • Blocks host-system path leaks (/Users/..., /home/...)  ║
+║                                                             ║
+╚═════════════════════════════════════════════════════════════╝
+                               │
+            ¿Changes needed?   │ Both verdicts: APPROVED & SECURE
+       (Max 3 review cycles)   ▼
+┌─────────────────────────────────────────────────────────────┐
+│ 4. GIT COMMIT & CLEAN CLOSURE                               │
+│    • Commits to git: feat(<slug>): <description>            │
+│    • Enables immediate rollback via git stash / git checkout│
+│    • Marks task completed: [x] in TASKS.md                  │
+│    • Leader picks next task or notifies user in chat        │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**Rule**: The Leader marks a task completed (`[x]`) ONLY after both the Reviewer (`APPROVED`) and Security Reviewer (`SECURE`) have passed.
+> **Single-Agent Mode**: For tools operating as a single agent (Cursor, Copilot, Windsurf, Aider), the AI executes this exact same pipeline sequentially: Leader (plan) → Implementer (build) → Reviewer (self-audit) → Security Reviewer (scan) → Git Commit.
 
 ---
 
@@ -88,13 +127,13 @@ This harness implements a defense-in-depth model specifically designed for auton
 | **Data Exfiltration via HTTP** | **Zero-Trust Egress Policy**: Only domains on the explicit whitelist in `docs/security.md` are permitted. Any unapproved network call is an automatic blocker. |
 | **Stealth Exfiltration** | Scans for markdown image tags (`![img](https://...?token=...)`), dynamic CSS `url()`, and DNS exfiltration patterns. |
 | **Package Hallucinations / Slopsquatting** | Prohibits AI agents from inventing package names. Dependencies must be verified against official registries with version pinning and lockfile enforcement. |
-| **Hardcoded Secrets** | Scans regex patterns for API keys, tokens, bearer headers, and private keys across code, tests, and progress reports. |
+| **Hardcoded Secrets & Tokens** | Scans regex patterns for GitHub PATs (`ghp_`, `github_pat_`), AWS keys (`AKIA`), OpenAI (`sk-`), Anthropic (`sk-ant-`), Slack (`xoxb-`), GitLab, bearer headers, and private keys. |
 | **Environment Variable Dumps** | Explicit ban on `process.env` / `os.environ` dumps in logs, console output, API responses, and error traces. |
 | **Git Exposure** | Pre-commit hook blocks secret commits; `.gitignore` strictly excludes `.env*`, `.pem`, `.key`, `.db`, and SQLite files. |
 | **Prompt Injection Defense** | **Quarantine External Data**: All web-scraped content and user files are treated as passive data without execution privileges. Agents are forbidden from reading `.env` while processing external text. |
 | **Path Neutrality (Zero Host Leaks)** | Ban on absolute system paths (`/Users/...`, `/home/...`). All paths must be repository-relative to prevent leaking workstation usernames or internal infrastructure details. |
 | **Offline Test Isolation** | Test suites must run cleanly without live internet access, eliminating test-time telemetry or socket exfiltration. |
-| **Canary Tokens** | Recommends canary traps in test fixtures to instantly detect unauthorized token exfiltration. |
+| **Canary Tokens Trap** | Ships with `.env.example` containing a decoy Canary Token to instantly detect unauthorized token exfiltration. |
 
 ---
 
@@ -121,20 +160,21 @@ Every tool reads from `AGENTS.md` and `agents/` automatically:
 ├── TASKS.md                          # Markdown task backlog (managed by Leader)
 ├── SETUP.md                          # Multi-tool reference documentation
 ├── CHECKPOINTS.md                    # Objective pass/fail criteria (C1–C6)
-├── init.sh                           # One-time bootstrap & baseline verification
+├── init.sh                           # One-time bootstrap & baseline verification (can self-delete)
 ├── .gitignore                        # Standard exclusions (secrets, DBs, node_modules)
+├── .env.example                      # Environment template with decoy Canary Token trap
 ├── .cursorrules                      # Cursor config
 ├── .windsurfrules                    # Windsurf config
 ├── .github/
 │   └── copilot-instructions.md       # Copilot config
 ├── .claude/
-│   └── settings.json                 # Claude Code hooks
+│   └── settings.json                 # Claude Code configuration
 ├── CLAUDE.md                         # Claude Code config
-├── agents/                           # Agent role definitions
+├── agents/                           # Agent role definitions (Autonomous Guardrails)
 │   ├── leader.md                     # Orchestrator & task planner
-│   ├── implementer.md                # Code and test builder
-│   ├── reviewer.md                   # Double-check quality auditor (read-only)
-│   └── security-reviewer.md          # Security & git exposure auditor (read-only)
+│   ├── implementer.md                # Code, tests & Git commit worker
+│   ├── reviewer.md                   # Quality & code sanitization auditor (read-only)
+│   └── security-reviewer.md          # Cybersecurity & anti-exfiltration gate (read-only)
 ├── docs/                             # Progressive disclosure guides
 │   ├── architecture.md               # Architectural layers and prohibited patterns
 │   ├── conventions.md                # Language style & testing standards
