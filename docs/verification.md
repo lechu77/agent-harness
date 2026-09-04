@@ -17,7 +17,7 @@ No claim without evidence. Every assertion of correctness must be backed by test
 - Asserting implementation details instead of behavior.
 
 ## Verification Checklist
-- [ ] `./init.sh` exits 0.
+- [ ] Test suite exits 0 with all tests passing.
 - [ ] All new code paths have corresponding tests.
 - [ ] Tests use real I/O where applicable (`tempfile.TemporaryDirectory`, `mkdtemp`, etc.).
 - [ ] Error paths are tested with specific error assertions.
@@ -25,4 +25,4 @@ No claim without evidence. Every assertion of correctness must be backed by test
 - [ ] Test output is captured and included in the implementation report.
 
 ## Final Gate
-Run `./init.sh`. If it's not green, the work is not done. No exceptions.
+Run the test suite. If tests are not green, the work is not done. No exceptions.

@@ -1,6 +1,7 @@
 # Environment / IDE
 .env
 .env.*
+!.env.example
 .env.local
 .env.production
 

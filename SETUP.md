@@ -136,17 +136,12 @@ Any tool that can read markdown files works. Point it to `AGENTS.md` as the entr
 
 ## Automated Hooks (Optional)
 
-If your tool supports hooks or pre/post commands, configure:
+If your tool supports hooks or pre/post commands, configure verification at session boundaries:
 
 | Event | Command | Purpose |
-|-------|---------|---------|
-| After file edit | `./init.sh 2>&1 \| tail -5` | Quick verification |
-| Before session end | `./init.sh` | Full verification |
-| Before git commit | `./init.sh` | Pre-commit gate |
+|-------|---------|--------|
+| Before session start | `git log --oneline -5` | Review recent progress |
+| Before session end | Run test suite (`npm test`, `pytest`, etc.) | Verify clean state |
+| Before git commit | Pre-commit hook (auto-installed by `init.sh`) | Block secrets |
 
-For git pre-commit hook, create `.git/hooks/pre-commit`:
-
-```bash
-#!/usr/bin/env bash
-./init.sh
-```
+> **Note:** `init.sh` is a one-time setup script. Do NOT configure it as a recurring hook. After initial setup, use your project's test suite for ongoing verification.

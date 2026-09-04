@@ -168,7 +168,7 @@ if [ -d ".git" ]; then
         cat << 'HOOK_EOF' > "$HOOK_FILE"
 #!/usr/bin/env bash
 # Automated Git Safety Gate — Pre-commit hook
-PATTERNS='password\s*=\s*["\x27][^"\x27]+["\x27]|api_key\s*=\s*["\x27]|secret\s*=\s*["\x27]|token\s*=\s*["\x27]|Bearer\s+[A-Za-z0-9_\-\.]{20,}|PRIVATE_KEY|-----BEGIN'
+PATTERNS='password\s*=\s*["\x27][^"\x27]+["\x27]|api_key\s*=\s*["\x27]|secret\s*=\s*["\x27]|token\s*=\s*["\x27]|Bearer\s+[A-Za-z0-9_\-\.]{20,}|PRIVATE_KEY|-----BEGIN|ghp_[A-Za-z0-9_]{36}|github_pat_[A-Za-z0-9_]{82}|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9\-]{20,}|xoxb-[0-9]{10,}|xoxp-[0-9]{10,}|glpat-[A-Za-z0-9\-]{20,}'
 STAGED_FILES=$(git diff --cached --name-only 2>/dev/null | grep -E '\.(py|js|ts|jsx|tsx|go|rs|env|json|yaml|yml)$' | grep -v 'TASKS\.md' || true)
 
 if [ -n "$STAGED_FILES" ]; then
@@ -187,7 +187,7 @@ HOOK_EOF
         cat << 'HOOK_EOF' >> "$HOOK_FILE"
 
 # Automated Git Safety Gate — Appended by agent-harness
-PATTERNS='password\s*=\s*["\x27][^"\x27]+["\x27]|api_key\s*=\s*["\x27]|secret\s*=\s*["\x27]|token\s*=\s*["\x27]|Bearer\s+[A-Za-z0-9_\-\.]{20,}|PRIVATE_KEY|-----BEGIN'
+PATTERNS='password\s*=\s*["\x27][^"\x27]+["\x27]|api_key\s*=\s*["\x27]|secret\s*=\s*["\x27]|token\s*=\s*["\x27]|Bearer\s+[A-Za-z0-9_\-\.]{20,}|PRIVATE_KEY|-----BEGIN|ghp_[A-Za-z0-9_]{36}|github_pat_[A-Za-z0-9_]{82}|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9\-]{20,}|xoxb-[0-9]{10,}|xoxp-[0-9]{10,}|glpat-[A-Za-z0-9\-]{20,}'
 STAGED_FILES=$(git diff --cached --name-only 2>/dev/null | grep -E '\.(py|js|ts|jsx|tsx|go|rs|env|json|yaml|yml)$' | grep -v 'TASKS\.md' || true)
 
 if [ -n "$STAGED_FILES" ]; then
@@ -261,6 +261,46 @@ EOF
     echo -e "  ${GREEN}✓${NC} Auto-provisioned missing .github/copilot-instructions.md"
 fi
 
+# ── 5. Dev Environment Detection & Bootstrap ──────────────
+# Detect project type and document commands for future agent sessions.
+echo ""
+echo -e "${BOLD}▸ Detecting Project Environment...${NC}"
+
+DEV_DETECTED=false
+
+if [ -f "package.json" ]; then
+    DEV_DETECTED=true
+    echo -e "  ${GREEN}✓${NC} Node.js project detected (package.json)"
+    if [ ! -d "node_modules" ] && command -v npm &> /dev/null; then
+        echo -e "  ${BLUE}▸${NC} Installing dependencies (npm install)..."
+        npm install --silent 2>/dev/null && echo -e "  ${GREEN}✓${NC} Dependencies installed" || echo -e "  ${YELLOW}⚠${NC} npm install had warnings (non-blocking)"
+    elif [ -d "node_modules" ]; then
+        echo -e "  ${GREEN}✓${NC} Dependencies already installed (node_modules exists)"
+    fi
+fi
+
+if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ]; then
+    DEV_DETECTED=true
+    echo -e "  ${GREEN}✓${NC} Python project detected"
+    if [ -f "requirements.txt" ] && ! [ -d ".venv" ] && ! [ -d "venv" ]; then
+        echo -e "  ${YELLOW}⚠${NC} No virtual environment found. Consider: python3 -m venv .venv && pip install -r requirements.txt"
+    fi
+fi
+
+if [ -f "Cargo.toml" ]; then
+    DEV_DETECTED=true
+    echo -e "  ${GREEN}✓${NC} Rust project detected (Cargo.toml)"
+fi
+
+if [ -f "go.mod" ]; then
+    DEV_DETECTED=true
+    echo -e "  ${GREEN}✓${NC} Go project detected (go.mod)"
+fi
+
+if [ "$DEV_DETECTED" = false ]; then
+    echo -e "  ${YELLOW}—${NC} No known project type detected (will be configured when you start building)"
+fi
+
 echo ""
 echo -e "${BOLD}▸ Validating Harness Integrity...${NC}"
 
@@ -287,6 +327,7 @@ check ".windsurfrules exists (Windsurf)" file_exists ".windsurfrules"
 check ".github/copilot-instructions.md exists (GitHub Copilot)" file_exists ".github/copilot-instructions.md"
 check "CLAUDE.md exists (Claude Code)" file_exists "CLAUDE.md"
 check ".gitignore exists" file_exists ".gitignore"
+check ".env.example exists (canary token)" file_exists ".env.example"
 
 echo ""
 

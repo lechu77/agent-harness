@@ -1,32 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./init.sh*)",
       "Bash(python3 -m unittest*)",
-      "Bash(npm test*)"
-    ]
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "./init.sh 2>&1 | tail -5"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "./init.sh"
-          }
-        ]
-      }
+      "Bash(npm test*)",
+      "Bash(pytest*)",
+      "Bash(cargo test*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git stash*)",
+      "Bash(git checkout*)"
     ]
   }
 }

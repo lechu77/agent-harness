@@ -1,5 +1,4 @@
 # Windsurf Rules — Agent Harness
-
 Read `AGENTS.md` before doing any work in this repository.
 
 ## Roles
@@ -9,7 +8,8 @@ Read `AGENTS.md` before doing any work in this repository.
 - Follow `agents/security-reviewer.md` for secret scanning and git safety.
 
 ## Non-Negotiable Rules
-1. Run `./init.sh` — must exit 0 before touching code and before closing.
-2. Select next pending feature from `feature_list.json`.
-3. Follow `docs/architecture.md`, `docs/conventions.md`, and `docs/security.md`.
-4. Keep git clean and check `.gitignore`.
+1. Follow `TASKS.md` for task selection.
+2. Follow `docs/architecture.md`, `docs/conventions.md`, and `docs/security.md`.
+3. Keep git clean and check `.gitignore`.
+4. Commit after each completed feature with a descriptive message.
+5. Run the test suite before and after changes.
