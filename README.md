@@ -9,12 +9,14 @@ Set it up **once**, and let your agents handle planning, coding, quality double-
 
 ---
 
-## The Philosophy: Zero Micromanagement
+## The Philosophy: Fire & Forget + Autonomous Guardrails
 
-- **Run `init.sh` ONCE**: Execute `./init.sh [project-name]` only when bootstrapping a new project. You never have to touch it again.
-- **No JSON Backlog Editing**: No manual editing of status fields or JSON syntax. You simply tell your AI in chat what you want to build. The **Leader** agent autonomously creates, tracks, and updates tasks in [`TASKS.md`](TASKS.md).
-- **Tool Agnostic**: Works out-of-the-box with **Antigravity**, **Cursor**, **GitHub Copilot**, **Windsurf**, and **Claude Code**.
-- **Extreme Cybersecurity & Anti-Exfiltration**: Hardened against credential leaks, supply chain poisoning (package hallucinations), stealth data exfiltration, and unauthorized network egress.
+- **Run `init.sh` ONCE (Fire & Forget)**: Execute `./init.sh` only when bootstrapping a new project. You can even let it delete itself upon completion. Neither you nor the agents ever run it again.
+- **Autonomous Multi-Agent Guardrails**: Once initialized, your agents talk to each other to plan, build, sanitize, and audit every change:
+  - **Sanitization Guardrail (`reviewer.md`)**: Re-reads all code adversarially, runs test suites independently, strips console logs/debug prints, and enforces architecture conventions.
+  - **Cybersecurity & Anti-Exfiltration Guardrail (`security-reviewer.md`)**: Scans every line for hardcoded API keys/tokens, blocks unauthorized network egress, stops prompt injections, and validates supply chain dependencies.
+- **Zero Micromanagement**: You don't edit JSON files, task backlogs, or markdown templates. You simply tell your AI in chat what you want to build; the **Leader** agent decomposes tasks and coordinates the guardrails.
+- **Tool Agnostic**: Works natively with **Antigravity**, **Cursor**, **GitHub Copilot**, **Windsurf**, and **Claude Code**.
 - **Automated Git Safety Gate**: A pre-commit hook automatically blocks any attempt to commit secrets or unredacted credentials to git.
 
 ---
