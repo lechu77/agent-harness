@@ -1,108 +1,67 @@
 # Setup Guide — Configure Your AI Coding Tool
 
-This harness works with any AI coding tool that can read files. Below are tool-specific setup instructions.
+This harness operates on a **zero-micromanagement, fire-and-forget** model:
+1. You run `./init.sh` **EXACTLY ONCE** to initialize the repository and install security hooks.
+2. You open your AI tool and describe what you want to build.
+3. **The agents take over 100% of the workflow.** You do not edit task lists, fill template placeholders, or run `init.sh` again.
 
 ---
 
-## Universal Setup (all tools)
+## Universal Setup (All Tools)
 
-1. Copy this template into your project root.
-2. Run `chmod +x init.sh && ./init.sh` — must exit 0.
-3. Edit `TASKS.md` with your features.
-4. Search for `{{` in `docs/*.md` and fill in project-specific values.
-5. Point your AI tool to `AGENTS.md` as the system instructions entry point.
+1. Clone or copy this template into your project root.
+2. Run `./init.sh` (or `./init.sh [project_name]`) **once**.
+3. Open your favorite AI tool and start chatting.
+4. Tell your AI what you want to build. The **Leader** agent decomposes your request into `TASKS.md`, fills project architecture guidelines, and orchestrates the implementation.
 
 ---
 
 ## Claude Code
 
-Create `.claude/settings.json` in your project root:
+The template already includes `.claude/settings.json` and `CLAUDE.md`:
 
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(./init.sh)",
-      "Bash(python3 -m unittest*)",
-      "Bash(npm test*)"
-    ]
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write|MultiEdit",
-        "hooks": [{"type": "command", "command": "./init.sh 2>&1 | tail -5"}]
-      }
-    ],
-    "Stop": [
-      {"hooks": [{"type": "command", "command": "./init.sh"}]}
-    ]
-  }
-}
+- `.claude/settings.json`: Configures execution permissions for test runners (`pytest`, `npm test`, `cargo test`, `git`). No recurring hooks needed.
+- `CLAUDE.md`: Points Claude to `AGENTS.md` to act as the Leader agent.
+
+To start working:
+```bash
+claude
+# In chat: "I want to build a REST API for managing users..."
 ```
-
-Create `CLAUDE.md` in your project root:
-
-```markdown
-Read AGENTS.md. You are the Leader. Read agents/leader.md for your full role.
-Run ./init.sh before starting. Use the Agent tool to delegate to implementer, reviewer, and security-reviewer.
-Tell every subagent: "Write your output to progress/*.md. Return only the file path."
-```
-
-Use subagents via Claude Code's `Agent` tool with the role files in `agents/`.
 
 ---
 
 ## Cursor
 
-Create `.cursorrules` in your project root:
+The template includes `.cursorrules` in the project root:
+- Directs Cursor to `AGENTS.md`.
+- Follows the single-agent sequential protocol: Leader (plan) → Implementer (code + test) → Reviewer (audit) → Security Reviewer (scan) → Git Commit.
 
-```
-Read AGENTS.md for full instructions. You are the Leader agent.
-Read agents/leader.md for your role definition.
-Run ./init.sh before starting work.
-One feature at a time. Read TASKS.md for the task backlog.
-Before writing code, read docs/architecture.md and docs/conventions.md.
-After implementation, review against CHECKPOINTS.md criteria C1-C6.
-Run security checks from agents/security-reviewer.md before marking done.
-```
+Open the folder in Cursor and start coding in Cursor Chat (Composer / Cmd+I).
 
 ---
 
 ## GitHub Copilot
 
-Create `.github/copilot-instructions.md` in your project:
-
-```markdown
-Read AGENTS.md for the project workflow.
-Follow docs/conventions.md for all code style decisions.
-Follow docs/architecture.md for structural decisions.
-Run ./init.sh to verify the project state before and after changes.
-Check docs/security.md before committing — no hardcoded secrets.
-```
+The template includes `.github/copilot-instructions.md`:
+- Directs Copilot to `AGENTS.md`, `CHECKPOINTS.md`, and `docs/`.
+- Tells Copilot to verify changes with the project test suite and commit cleanly.
 
 ---
 
 ## Windsurf
 
-Create `.windsurfrules` in your project root:
-
-```
-Read AGENTS.md for full project instructions and agent workflow.
-You are the Leader. Read agents/leader.md for your role.
-Run ./init.sh before starting. Follow TASKS.md for task selection.
-Delegate implementation to the implementer role (agents/implementer.md).
-Review work using the reviewer checklist (agents/reviewer.md).
-Run security review using agents/security-reviewer.md before closing.
-```
+The template includes `.windsurfrules` in the project root:
+- Instructs Windsurf to read `AGENTS.md`.
+- Works through `TASKS.md` one feature at a time.
 
 ---
 
 ## Antigravity (AGY)
 
-`AGENTS.md` is auto-loaded as a user rule if placed in the project root. No additional config needed.
+`AGENTS.md` is auto-loaded as a user rule if placed in the project root. No configuration required.
 
-For subagent delegation, Antigravity's `invoke_subagent` tool works natively. Instruct each subagent to read its role file from `agents/`.
+Antigravity natively launches subagents for Implementer, Reviewer, and Security Reviewer via `invoke_subagent`.
 
 ---
 
@@ -118,30 +77,16 @@ Or pass at startup: `aider --read AGENTS.md`
 
 ---
 
-## OpenCode / Other Tools
+## Summary of Responsibilities
 
-Any tool that can read markdown files works. Point it to `AGENTS.md` as the entry point. The key files are:
-
-| What the tool needs | File to read |
-|---------------------|-------------|
-| Project workflow | `AGENTS.md` |
-| Architecture rules | `docs/architecture.md` |
-| Code style | `docs/conventions.md` |
-| Verification | `docs/verification.md` |
-| Security policy | `docs/security.md` |
-| Task backlog | `TASKS.md` |
-| Quality criteria | `CHECKPOINTS.md` |
-
----
-
-## Automated Hooks (Optional)
-
-If your tool supports hooks or pre/post commands, configure verification at session boundaries:
-
-| Event | Command | Purpose |
-|-------|---------|--------|
-| Before session start | `git log --oneline -5` | Review recent progress |
-| Before session end | Run test suite (`npm test`, `pytest`, etc.) | Verify clean state |
-| Before git commit | Pre-commit hook (auto-installed by `init.sh`) | Block secrets |
-
-> **Note:** `init.sh` is a one-time setup script. Do NOT configure it as a recurring hook. After initial setup, use your project's test suite for ongoing verification.
+| Role | Who Does It | When |
+|---|---|---|
+| Run `./init.sh` | **Human** | **Only once**, at repository bootstrap |
+| Describe what to build | **Human** | In chat when starting new features |
+| Decompose into tasks | **Leader Agent** | Autonomously in `TASKS.md` |
+| Fill architecture & convention docs | **Leader Agent** | Autonomously during first session |
+| Write code & unit/integration tests | **Implementer Agent** | Exactly 1 task per session |
+| Audit quality & edge cases | **Reviewer Agent** | Runs tests independently |
+| Scan for secrets, PII & exfiltration | **Security Reviewer Agent** | Pre-commit security gate |
+| Git commit completed features | **Implementer / Leader** | After test suite passes |
+| Run test suite (`npm test`, `pytest`) | **Agents** | Continuous during development |

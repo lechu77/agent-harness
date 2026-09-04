@@ -36,6 +36,7 @@
 ## 3. Hard Rules (Non-Negotiable)
 
 - **The human does NOT manage tasks manually.** The Leader autonomously maintains `TASKS.md` based on user prompts.
+- **Zero micromanagement (`init.sh` is run once).** `init.sh` was executed once during project bootstrap and may even have been deleted. Agents must NEVER ask the human to run `init.sh` again or expect it to exist. All ongoing verification and testing is handled autonomously by agents running the project's test suite.
 - **One task at a time.** Exactly ONE task may be marked in progress (`[/]`) at any time.
 - **No `done` without evidence.** The Implementer and Reviewer run tests via terminal tools. Every assertion of correctness must be backed by real test output.
 - **Never hardcode secrets.** Any API key, token, or password committed to code is a blocker.
