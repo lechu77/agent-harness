@@ -140,13 +140,6 @@ EOF
         fi
     fi
 
-    # Copy init.sh to target project
-    if [ ! -f "$CURRENT_DIR/init.sh" ]; then
-        cp "$SCRIPT_DIR/init.sh" "$CURRENT_DIR/init.sh"
-        chmod +x "$CURRENT_DIR/init.sh"
-        echo -e "  ${GREEN}✓${NC} Copied init.sh into project"
-    fi
-
     echo ""
 fi
 
@@ -448,21 +441,9 @@ if [ $FAIL -eq 0 ]; then
     echo -e "  and describe what you want to build. Your agents will handle the rest."
     echo ""
     
-    # Prompt to delete init.sh since it is run only once
+    # Self-deletion only applies when running locally inside a project
     if [ "$IS_EXTERNAL_RUN" = true ]; then
         echo -e "  ${GREEN}✓${NC} Master template preserved intact (${SCRIPT_DIR}/init.sh)"
-        if [ -f "$CURRENT_DIR/init.sh" ] && [ -t 0 ]; then
-            echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
-            echo -ne "${BOLD}Since setup is complete, do you want to delete init.sh from this project? [y/N]: ${NC}"
-            read -r DEL_INIT
-            if [[ "$DEL_INIT" =~ ^[Yy]$ ]]; then
-                echo -e "  ${GREEN}✓${NC} Removing local init.sh copy..."
-                rm -f "$CURRENT_DIR/init.sh"
-                echo -e "  ${GREEN}✓${NC} Local init.sh removed. Master template remains intact in ${SCRIPT_DIR}."
-            else
-                echo -e "  ${GREEN}✓${NC} Kept local copy of init.sh in target project."
-            fi
-        fi
     else
         # Running directly inside the harness/project directory
         if [ "$IS_TEMPLATE_REPO" = true ]; then
