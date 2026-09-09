@@ -37,32 +37,22 @@ dir_exists() { [ -d "$1" ]; }
 
 FORCE_CLEAN=false
 FORCE_KEEP=false
-FORCE_RESET_REMOTE=false
-PROJECT_NAME=""
 
 for arg in "$@"; do
     case "$arg" in
         --clean-git) FORCE_CLEAN=true ;;
         --keep-git) FORCE_KEEP=true ;;
-        --reset-remote) FORCE_RESET_REMOTE=true ;;
         --help|-h)
-            echo -e "${BOLD}Agent Harness — CLI Reference${NC}"
+            echo -e "${BOLD}Agent Harness — Setup & Environment Verification${NC}"
             echo ""
             echo "Usage:"
-            echo "  ./init.sh                     Run smart setup / health check"
-            echo "  ./init.sh [project_name]      Bootstrap a new project (detaches git)"
-            echo "  /path/to/agent-harness/init.sh  Install harness into current directory from external repo"
-            echo "  ./init.sh --clean-git         Force detach and reinitialize fresh git repository"
-            echo "  ./init.sh --reset-remote      Disconnect remote origin (keep commit history)"
-            echo "  ./init.sh --keep-git          Force preserve existing git repository"
+            echo "  ./init.sh                     Smart setup (prompts if repo exists; runs clean if new)"
+            echo "  /path/to/agent-harness/init.sh  Run remotely from any project"
+            echo "  ./init.sh --clean-git         Force clean slate (reset Git from zero)"
+            echo "  ./init.sh --keep-git          Force preserve existing Git repository"
             echo "  ./init.sh --help              Show this screen"
             echo ""
             exit 0
-            ;;
-        *)
-            if [[ -z "$PROJECT_NAME" && "$arg" != -* ]]; then
-                PROJECT_NAME="$arg"
-            fi
             ;;
     esac
 done
@@ -172,83 +162,37 @@ CREATE_BASELINE_COMMIT=false
 
 if [ -d ".git" ]; then
     if [ "$FORCE_CLEAN" = true ]; then
-        echo -e "${BLUE}▸ Detaching git history (--clean-git requested)...${NC}"
+        echo -e "${BLUE}▸ Planchando repositorio Git (--clean-git)...${NC}"
         rm -rf .git
         git init -b main > /dev/null 2>&1 || git init > /dev/null 2>&1
-        echo -e "  ${GREEN}✓${NC} Initialized fresh Git repository (branch: main)"
+        echo -e "  ${GREEN}✓${NC} Repositorio Git inicializado de cero (branch: main)"
         CREATE_BASELINE_COMMIT=true
     elif [ "$FORCE_KEEP" = true ]; then
-        echo -e "  ${GREEN}✓${NC} Existing git repository preserved intact (--keep-git requested)"
-    elif [ "$FORCE_RESET_REMOTE" = true ]; then
-        if git remote get-url origin > /dev/null 2>&1; then
-            OLD_REMOTE=$(git remote get-url origin)
-            git remote remove origin
-            echo -e "  ${GREEN}✓${NC} Disconnected remote origin (${OLD_REMOTE})."
-            echo -e "  ${BLUE}▸${NC} Ready to connect your repo: ${BOLD}git remote add origin <your-repo-url>${NC}"
+        echo -e "  ${GREEN}✓${NC} Repositorio Git conservado intacto (--keep-git)"
+    elif [ -t 0 ]; then
+        echo -e "${YELLOW}▸ Repositorio Git existente detectado${NC}${REMOTE_URL:+ ($REMOTE_URL)}."
+        echo -e "  ¿Qué querés hacer con el repositorio Git?"
+        echo -e "    1) Mantener el repo actual intacto (conservar historial y remotes) [default]"
+        echo -e "    2) Planchar todo y empezar de cero (Clean slate: nuevo repo 0km)"
+        echo -ne "${BOLD}  Opción [1/2, default: 1]: ${NC}"
+        read -r GIT_CHOICE
+        if [[ "$GIT_CHOICE" == "2" ]]; then
+            echo -e "${BLUE}▸ Planchando repositorio Git...${NC}"
+            rm -rf .git
+            git init -b main > /dev/null 2>&1 || git init > /dev/null 2>&1
+            echo -e "  ${GREEN}✓${NC} Repositorio Git inicializado de cero (branch: main)"
+            CREATE_BASELINE_COMMIT=true
         else
-            echo -e "  ${YELLOW}—${NC} No remote origin configured."
-        fi
-    elif [ -n "$PROJECT_NAME" ]; then
-        # Explicit project name passed -> Bootstrap new project from this repo (whether template or cloned 3rd-party)
-        echo -e "${BLUE}▸ Repository detected (${REMOTE_URL:-local git repo}).${NC}"
-        echo -e "${BLUE}▸ Bootstrapping new project '${PROJECT_NAME}' (detaching git history)...${NC}"
-        rm -rf .git
-        git init -b main > /dev/null 2>&1 || git init > /dev/null 2>&1
-        echo -e "  ${GREEN}✓${NC} Initialized fresh Git repository (branch: main)"
-        CREATE_BASELINE_COMMIT=true
-    elif [ "$IS_TEMPLATE_REPO" = true ]; then
-        # Running inside the template repository itself without project name
-        if [ -t 0 ]; then
-            echo -e "${YELLOW}▸ Template repository detected (${REMOTE_URL}).${NC}"
-            echo -ne "${BOLD}Do you want to detach template git history to start a fresh project? [Y/n]: ${NC}"
-            read -r RESP
-            if [[ "$RESP" =~ ^[Yy]?$ || -z "$RESP" ]]; then
-                rm -rf .git
-                git init -b main > /dev/null 2>&1 || git init > /dev/null 2>&1
-                echo -e "  ${GREEN}✓${NC} Initialized fresh Git repository (branch: main)"
-                CREATE_BASELINE_COMMIT=true
-            else
-                echo -e "  ${GREEN}✓${NC} Template git repository preserved intact."
-            fi
-        else
-            echo -e "  ${GREEN}✓${NC} Template repository detected. Preserving git (pass a project name or --clean-git to detach)."
+            echo -e "  ${GREEN}✓${NC} Repositorio Git conservado 100% intacto"
         fi
     else
-        # Running inside an existing external repository!
-        if [ -t 0 ] && [ -n "$REMOTE_URL" ]; then
-            echo -e "${YELLOW}▸ Existing git repository detected (${REMOTE_URL}).${NC}"
-            echo -e "  Is this a base for a new project of your own?"
-            echo -e "    1) Yes: Start fresh git repository (clean slate, recommended for new project)"
-            echo -e "    2) Yes: Keep commit history, but disconnect remote origin (ready for your repo)"
-            echo -e "    3) No: Keep existing git, history, and remotes 100% intact (contributor / own repo)"
-            echo -ne "${BOLD}  Select [1/2/3, default: 3]: ${NC}"
-            read -r GIT_CHOICE
-            case "$GIT_CHOICE" in
-                1)
-                    echo -e "${BLUE}▸ Detaching git history...${NC}"
-                    rm -rf .git
-                    git init -b main > /dev/null 2>&1 || git init > /dev/null 2>&1
-                    echo -e "  ${GREEN}✓${NC} Initialized fresh Git repository (branch: main)"
-                    CREATE_BASELINE_COMMIT=true
-                    ;;
-                2)
-                    git remote remove origin 2>/dev/null || true
-                    echo -e "  ${GREEN}✓${NC} Removed remote origin (${REMOTE_URL})."
-                    echo -e "  ${BLUE}▸${NC} Ready to connect your repo: ${BOLD}git remote add origin <your-repo-url>${NC}"
-                    ;;
-                *)
-                    echo -e "  ${GREEN}✓${NC} Git history, branches, and remotes preserved 100% intact"
-                    ;;
-            esac
-        else
-            echo -e "  ${GREEN}✓${NC} Existing project repository detected (${REMOTE_URL:-local git repo})"
-            echo -e "  ${GREEN}✓${NC} Git history, branches, and remotes preserved 100% intact"
-        fi
+        # Non-interactive mode (pipes/CI) -> safe default: preserve
+        echo -e "  ${GREEN}✓${NC} Repositorio Git existente detectado (${REMOTE_URL:-local git repo}) — conservado intacto"
     fi
 else
-    echo -e "${BLUE}▸ No git repository detected. Initializing git...${NC}"
+    # No hay repo: nada, sigue de largo!
     git init -b main > /dev/null 2>&1 || git init > /dev/null 2>&1
-    echo -e "  ${GREEN}✓${NC} Initialized fresh Git repository (branch: main)"
+    echo -e "  ${GREEN}✓${NC} Repositorio Git inicializado de cero (branch: main)"
     CREATE_BASELINE_COMMIT=true
 fi
 
@@ -521,7 +465,7 @@ if [ $FAIL -eq 0 ]; then
         fi
     else
         # Running directly inside the harness/project directory
-        if [ "$IS_TEMPLATE_REPO" = true ] && [ -z "$PROJECT_NAME" ]; then
+        if [ "$IS_TEMPLATE_REPO" = true ]; then
             echo -e "  ${GREEN}✓${NC} Master template repository preserved (init.sh retained)."
         elif [ -t 0 ]; then
             echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"

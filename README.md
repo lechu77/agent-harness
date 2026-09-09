@@ -21,67 +21,36 @@ Set it up **once**, and let your agents handle planning, coding, quality double-
 
 ---
 
-## 1. Quick Start: Clone Once, Run Once
+## 1. Quick Start: Solo ejecutás `init.sh` a secas
 
-### Option A: Starting a New Project from Scratch
+No necesitás pasarle argumentos ni nombres de proyecto. Solo ejecutás `init.sh`:
+
+### En cualquier proyecto (nuevo, existente o clonado de un tercero):
 ```bash
-# 1. Clone this template into your new project directory
-git clone https://github.com/lechu77/agent-harness.git my-new-project
-cd my-new-project
+cd mi-proyecto
 
-# 2. Run initial setup (detaches template git history, initializes clean repo)
-./init.sh my-new-project
-
-# 3. Open your favorite AI tool and start building!
-```
-
-### Option B: Adding to an Existing Repository (Zero-Copy Remote Run)
-If you already have an existing project and want to equip it with this harness:
-```bash
-# 1. Enter your existing project
-cd my-existing-project
-
-# 2. Run init.sh directly from your cloned agent-harness location
+# Ejecutás el init de tu harness remotamente (o ./init.sh si lo copiaste):
 ../agent-harness/init.sh
-# (or /path/to/agent-harness/init.sh)
-
-# That's it! init.sh automatically:
-# ✓ Deploys all harness files, directories, and tool adapters into your project
-# ✓ Preserves your existing git history, branches, and remotes 100% intact
-# ✓ Appends security rules to your existing .gitignore without overwriting
-# ✓ Installs the pre-commit git security gate
-# ✓ Keeps your master agent-harness template completely safe and intact!
 ```
 
-### Option C: Cloned Someone Else's Repo (Starting Your Own Project)
-If you clone a third-party repository to use as a starting point for your own project:
-```bash
-# 1. Clone the third-party repo and enter it
-git clone https://github.com/someone-else/starter-app.git my-app
-cd my-app
+**¿Qué pasa al ejecutarlo?**
+- **Si NO detecta Git**: Inicializa Git automáticamente (`main`), crea el commit baseline inicial y **sigue de largo sin preguntar nada**.
+- **Si detecta un Git existente**: Te muestra un prompt simple y directo:
+  ```text
+  ▸ Repositorio Git existente detectado.
+    ¿Qué querés hacer con el repositorio Git?
+      1) Mantener el repo actual intacto (conservar historial y remotes) [default]
+      2) Planchar todo y empezar de cero (Clean slate: nuevo repo 0km)
+    Opción [1/2, default: 1]:
+  ```
+  - **Opción 1** (Enter): Mantiene tus ramas, historial y remotes 100% intactos (ideal para tus proyectos existentes como `ShadowerNinja`).
+  - **Opción 2**: Plancha el Git ajeno y te inicializa un Git 0km en `main` con commit baseline (ideal cuando te clonás un repo ajeno como base para un proyecto propio).
 
-# 2. Bootstrap your new project in one command:
-../agent-harness/init.sh my-app
+### Smart Zero-Copy & Self-Deletion
+- **Zero-Copy**: Al correrlo remotamente (`../agent-harness/init.sh`), despliega todos los archivos, guardrails y adaptadores sin que tengas que copiar nada a mano.
+- **Protección de la plantilla maestra**: El `init.sh` original de `agent-harness` **nunca se borra**. Solo ofrece eliminar la copia local del proyecto destino.
 
-# What happens:
-# ✓ Deploys all harness files, directories, and tool adapters
-# ✓ Detaches third-party git history and initializes a clean, fresh repository
-# ✓ Creates your clean baseline commit with pre-commit security hook
-# ✓ Ready for you to connect your own GitHub repository:
-git remote add origin git@github.com:my-user/my-app.git
-git push -u origin main
-
-# Tip: If you prefer keeping the author's commit history but want to disconnect
-# their remote origin, run: ../agent-harness/init.sh --reset-remote
-```
-
-### Smart Git Preservation & Self-Deletion
-- **Template repo detected**: `./init.sh` safely detaches the template git history so you start with a clean slate and no git conflicts.
-- **Third-party repo detected**: Passing a project name (`./init.sh my-project`) turns any cloned repo into a fresh, clean project of your own.
-- **Existing project detected**: Without arguments, `./init.sh` **never** touches or deletes your `.git` folder. In interactive mode, it lets you choose whether to start fresh, disconnect remote origin, or keep everything 100% intact.
-- **Self-Deletion on Completion**: Once setup is verified, `init.sh` asks if you want to delete `init.sh`. You can answer `y` to remove it completely. The master copy in `agent-harness` is always protected and preserved.
-
-Once this exits green, **you are done with setup forever**.
+Una vez que termina en verde, **no volvés a ejecutar `init.sh` nunca más**. Abrís tu editor y empezás a vibecodear.
 
 ---
 
