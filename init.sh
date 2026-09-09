@@ -49,6 +49,7 @@ for arg in "$@"; do
             echo "Usage:"
             echo "  ./init.sh                     Run smart setup / health check"
             echo "  ./init.sh [project_name]      Bootstrap a new project from template"
+            echo "  /path/to/agent-harness/init.sh  Install harness into current directory from external repo"
             echo "  ./init.sh --clean-git         Force detach and reinitialize git repository"
             echo "  ./init.sh --keep-git          Force preserve existing git repository"
             echo "  ./init.sh --help              Show this screen"
@@ -63,17 +64,104 @@ for arg in "$@"; do
     esac
 done
 
+# ── Resolution of Script Location & Execution Context ─────
+SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd -P)"
+CURRENT_DIR="$(pwd -P)"
+
+IS_EXTERNAL_RUN=false
+if [ "$SCRIPT_DIR" != "$CURRENT_DIR" ]; then
+    IS_EXTERNAL_RUN=true
+fi
+
 echo ""
 echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
 echo -e "${BOLD}  Agent Harness — Setup & Environment Verification       ${NC}"
 echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
 echo ""
 
+# ── 0. Remote Deployment Mode (if executed from external dir) ──
+if [ "$IS_EXTERNAL_RUN" = true ]; then
+    echo -e "${BLUE}▸ Remote deployment mode detected.${NC}"
+    echo -e "  Template Source : ${BOLD}${SCRIPT_DIR}${NC}"
+    echo -e "  Target Project  : ${BOLD}${CURRENT_DIR}${NC}"
+    echo ""
+    echo -e "${BLUE}▸ Deploying Agent Harness into target project...${NC}"
+
+    # Directories
+    for dir in agents docs progress; do
+        if [ -d "$SCRIPT_DIR/$dir" ]; then
+            mkdir -p "$CURRENT_DIR/$dir"
+            cp -R "$SCRIPT_DIR/$dir/." "$CURRENT_DIR/$dir/" 2>/dev/null || true
+            echo -e "  ${GREEN}✓${NC} Deployed $dir/"
+        fi
+    done
+
+    # Tool config directories
+    if [ -d "$SCRIPT_DIR/.github" ]; then
+        mkdir -p "$CURRENT_DIR/.github"
+        if [ ! -f "$CURRENT_DIR/.github/copilot-instructions.md" ]; then
+            cp "$SCRIPT_DIR/.github/copilot-instructions.md" "$CURRENT_DIR/.github/" 2>/dev/null || true
+            echo -e "  ${GREEN}✓${NC} Deployed .github/copilot-instructions.md"
+        fi
+    fi
+
+    if [ -d "$SCRIPT_DIR/.claude" ]; then
+        mkdir -p "$CURRENT_DIR/.claude"
+        if [ ! -f "$CURRENT_DIR/.claude/settings.json" ]; then
+            cp "$SCRIPT_DIR/.claude/settings.json" "$CURRENT_DIR/.claude/" 2>/dev/null || true
+            echo -e "  ${GREEN}✓${NC} Deployed .claude/settings.json"
+        fi
+    fi
+
+    # Core files (do not overwrite if already existing in target)
+    for file in AGENTS.md TASKS.md CHECKPOINTS.md SETUP.md CLAUDE.md .cursorrules .windsurfrules .env.example; do
+        if [ -f "$SCRIPT_DIR/$file" ]; then
+            if [ ! -f "$CURRENT_DIR/$file" ]; then
+                cp "$SCRIPT_DIR/$file" "$CURRENT_DIR/$file"
+                echo -e "  ${GREEN}✓${NC} Deployed $file"
+            fi
+        fi
+    done
+
+    # .gitignore handling
+    if [ ! -f "$CURRENT_DIR/.gitignore" ]; then
+        if [ -f "$SCRIPT_DIR/.gitignore" ]; then
+            cp "$SCRIPT_DIR/.gitignore" "$CURRENT_DIR/.gitignore"
+            echo -e "  ${GREEN}✓${NC} Created .gitignore"
+        fi
+    else
+        if ! grep -q "^\.env" "$CURRENT_DIR/.gitignore" 2>/dev/null; then
+            cat << 'EOF' >> "$CURRENT_DIR/.gitignore"
+
+# Environment & Secrets (Added by agent-harness)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+EOF
+            echo -e "  ${GREEN}✓${NC} Appended security ignore rules to existing .gitignore"
+        fi
+    fi
+
+    # Copy init.sh to target project
+    if [ ! -f "$CURRENT_DIR/init.sh" ]; then
+        cp "$SCRIPT_DIR/init.sh" "$CURRENT_DIR/init.sh"
+        chmod +x "$CURRENT_DIR/init.sh"
+        echo -e "  ${GREEN}✓${NC} Copied init.sh into project"
+    fi
+
+    echo ""
+fi
+
 # ── 1. Smart Git Detection & Preservation ───────────────
 REMOTE_URL=$(git remote get-url origin 2>/dev/null || git config --get remote.origin.url 2>/dev/null || echo "")
 
 IS_TEMPLATE_REPO=false
-if [[ "$REMOTE_URL" =~ agent-harness ]]; then
+if [ "$IS_EXTERNAL_RUN" = false ] && [[ "$REMOTE_URL" =~ agent-harness ]]; then
     IS_TEMPLATE_REPO=true
 fi
 
@@ -377,16 +465,35 @@ if [ $FAIL -eq 0 ]; then
     echo ""
     
     # Prompt to delete init.sh since it is run only once
-    if [ -t 0 ]; then
-        echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
-        echo -ne "${BOLD}Since init.sh is only run once, do you want to delete init.sh? [y/N]: ${NC}"
-        read -r DEL_INIT
-        if [[ "$DEL_INIT" =~ ^[Yy]$ ]]; then
-            echo -e "  ${GREEN}✓${NC} Removing init.sh..."
-            rm -f "$0"
-            echo -e "  ${GREEN}✓${NC} init.sh deleted. Happy vibecoding!"
-        else
-            echo -e "  ${GREEN}✓${NC} Kept init.sh in repository."
+    if [ "$IS_EXTERNAL_RUN" = true ]; then
+        echo -e "  ${GREEN}✓${NC} Master template preserved intact (${SCRIPT_DIR}/init.sh)"
+        if [ -f "$CURRENT_DIR/init.sh" ] && [ -t 0 ]; then
+            echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
+            echo -ne "${BOLD}Since setup is complete, do you want to delete init.sh from this project? [y/N]: ${NC}"
+            read -r DEL_INIT
+            if [[ "$DEL_INIT" =~ ^[Yy]$ ]]; then
+                echo -e "  ${GREEN}✓${NC} Removing local init.sh copy..."
+                rm -f "$CURRENT_DIR/init.sh"
+                echo -e "  ${GREEN}✓${NC} Local init.sh removed. Master template remains intact in ${SCRIPT_DIR}."
+            else
+                echo -e "  ${GREEN}✓${NC} Kept local copy of init.sh in target project."
+            fi
+        fi
+    else
+        # Running directly inside the harness/project directory
+        if [ "$IS_TEMPLATE_REPO" = true ] && [ -z "$PROJECT_NAME" ]; then
+            echo -e "  ${GREEN}✓${NC} Master template repository preserved (init.sh retained)."
+        elif [ -t 0 ]; then
+            echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
+            echo -ne "${BOLD}Since init.sh is only run once, do you want to delete init.sh? [y/N]: ${NC}"
+            read -r DEL_INIT
+            if [[ "$DEL_INIT" =~ ^[Yy]$ ]]; then
+                echo -e "  ${GREEN}✓${NC} Removing init.sh..."
+                rm -f "$CURRENT_DIR/init.sh"
+                echo -e "  ${GREEN}✓${NC} init.sh deleted. Happy vibecoding!"
+            else
+                echo -e "  ${GREEN}✓${NC} Kept init.sh in repository."
+            fi
         fi
     fi
 else

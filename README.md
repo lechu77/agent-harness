@@ -35,17 +35,22 @@ cd my-new-project
 # 3. Open your favorite AI tool and start building!
 ```
 
-### Option B: Adding to an Existing Repository
+### Option B: Adding to an Existing Repository (Zero-Copy Remote Run)
 If you already have an existing project and want to equip it with this harness:
 ```bash
-# 1. Copy the harness files into your existing project root
-# (AGENTS.md, TASKS.md, CHECKPOINTS.md, init.sh, agents/, docs/, progress/, etc.)
+# 1. Enter your existing project
+cd my-existing-project
 
-# 2. Run setup in your existing project
-./init.sh
+# 2. Run init.sh directly from your cloned agent-harness location
+../agent-harness/init.sh
+# (or /path/to/agent-harness/init.sh)
 
-# 3. init.sh detects your existing repo, preserves your git history 100%,
-#    and installs the pre-commit security hook!
+# That's it! init.sh automatically:
+# ✓ Deploys all harness files, directories, and tool adapters into your project
+# ✓ Preserves your existing git history, branches, and remotes 100% intact
+# ✓ Appends security rules to your existing .gitignore without overwriting
+# ✓ Installs the pre-commit git security gate
+# ✓ Keeps your master agent-harness template completely safe and intact!
 ```
 
 ### Smart Git Preservation & Self-Deletion
