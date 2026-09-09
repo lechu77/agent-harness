@@ -53,10 +53,33 @@ cd my-existing-project
 # ✓ Keeps your master agent-harness template completely safe and intact!
 ```
 
+### Option C: Cloned Someone Else's Repo (Starting Your Own Project)
+If you clone a third-party repository to use as a starting point for your own project:
+```bash
+# 1. Clone the third-party repo and enter it
+git clone https://github.com/someone-else/starter-app.git my-app
+cd my-app
+
+# 2. Bootstrap your new project in one command:
+../agent-harness/init.sh my-app
+
+# What happens:
+# ✓ Deploys all harness files, directories, and tool adapters
+# ✓ Detaches third-party git history and initializes a clean, fresh repository
+# ✓ Creates your clean baseline commit with pre-commit security hook
+# ✓ Ready for you to connect your own GitHub repository:
+git remote add origin git@github.com:my-user/my-app.git
+git push -u origin main
+
+# Tip: If you prefer keeping the author's commit history but want to disconnect
+# their remote origin, run: ../agent-harness/init.sh --reset-remote
+```
+
 ### Smart Git Preservation & Self-Deletion
 - **Template repo detected**: `./init.sh` safely detaches the template git history so you start with a clean slate and no git conflicts.
-- **Existing project detected**: `./init.sh` **never** touches or deletes your `.git` folder. All existing branches, remotes, and commit history remain completely intact.
-- **Self-Deletion on Completion**: Once setup is verified, `init.sh` asks if you want to delete `init.sh`. You can answer `y` to remove it completely. Neither you nor the agents ever need it again.
+- **Third-party repo detected**: Passing a project name (`./init.sh my-project`) turns any cloned repo into a fresh, clean project of your own.
+- **Existing project detected**: Without arguments, `./init.sh` **never** touches or deletes your `.git` folder. In interactive mode, it lets you choose whether to start fresh, disconnect remote origin, or keep everything 100% intact.
+- **Self-Deletion on Completion**: Once setup is verified, `init.sh` asks if you want to delete `init.sh`. You can answer `y` to remove it completely. The master copy in `agent-harness` is always protected and preserved.
 
 Once this exits green, **you are done with setup forever**.
 

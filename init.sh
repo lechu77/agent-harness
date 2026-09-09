@@ -37,20 +37,23 @@ dir_exists() { [ -d "$1" ]; }
 
 FORCE_CLEAN=false
 FORCE_KEEP=false
+FORCE_RESET_REMOTE=false
 PROJECT_NAME=""
 
 for arg in "$@"; do
     case "$arg" in
         --clean-git) FORCE_CLEAN=true ;;
         --keep-git) FORCE_KEEP=true ;;
+        --reset-remote) FORCE_RESET_REMOTE=true ;;
         --help|-h)
             echo -e "${BOLD}Agent Harness — CLI Reference${NC}"
             echo ""
             echo "Usage:"
             echo "  ./init.sh                     Run smart setup / health check"
-            echo "  ./init.sh [project_name]      Bootstrap a new project from template"
+            echo "  ./init.sh [project_name]      Bootstrap a new project (detaches git)"
             echo "  /path/to/agent-harness/init.sh  Install harness into current directory from external repo"
-            echo "  ./init.sh --clean-git         Force detach and reinitialize git repository"
+            echo "  ./init.sh --clean-git         Force detach and reinitialize fresh git repository"
+            echo "  ./init.sh --reset-remote      Disconnect remote origin (keep commit history)"
             echo "  ./init.sh --keep-git          Force preserve existing git repository"
             echo "  ./init.sh --help              Show this screen"
             echo ""
@@ -176,16 +179,26 @@ if [ -d ".git" ]; then
         CREATE_BASELINE_COMMIT=true
     elif [ "$FORCE_KEEP" = true ]; then
         echo -e "  ${GREEN}✓${NC} Existing git repository preserved intact (--keep-git requested)"
+    elif [ "$FORCE_RESET_REMOTE" = true ]; then
+        if git remote get-url origin > /dev/null 2>&1; then
+            OLD_REMOTE=$(git remote get-url origin)
+            git remote remove origin
+            echo -e "  ${GREEN}✓${NC} Disconnected remote origin (${OLD_REMOTE})."
+            echo -e "  ${BLUE}▸${NC} Ready to connect your repo: ${BOLD}git remote add origin <your-repo-url>${NC}"
+        else
+            echo -e "  ${YELLOW}—${NC} No remote origin configured."
+        fi
+    elif [ -n "$PROJECT_NAME" ]; then
+        # Explicit project name passed -> Bootstrap new project from this repo (whether template or cloned 3rd-party)
+        echo -e "${BLUE}▸ Repository detected (${REMOTE_URL:-local git repo}).${NC}"
+        echo -e "${BLUE}▸ Bootstrapping new project '${PROJECT_NAME}' (detaching git history)...${NC}"
+        rm -rf .git
+        git init -b main > /dev/null 2>&1 || git init > /dev/null 2>&1
+        echo -e "  ${GREEN}✓${NC} Initialized fresh Git repository (branch: main)"
+        CREATE_BASELINE_COMMIT=true
     elif [ "$IS_TEMPLATE_REPO" = true ]; then
-        # Running inside the template repository itself
-        if [[ -n "$PROJECT_NAME" ]]; then
-            echo -e "${BLUE}▸ Cloned template repository detected (${REMOTE_URL}).${NC}"
-            echo -e "${BLUE}▸ Bootstrapping new project '${PROJECT_NAME}' (detaching template git)...${NC}"
-            rm -rf .git
-            git init -b main > /dev/null 2>&1 || git init > /dev/null 2>&1
-            echo -e "  ${GREEN}✓${NC} Initialized fresh Git repository (branch: main)"
-            CREATE_BASELINE_COMMIT=true
-        elif [ -t 0 ]; then
+        # Running inside the template repository itself without project name
+        if [ -t 0 ]; then
             echo -e "${YELLOW}▸ Template repository detected (${REMOTE_URL}).${NC}"
             echo -ne "${BOLD}Do you want to detach template git history to start a fresh project? [Y/n]: ${NC}"
             read -r RESP
@@ -201,9 +214,36 @@ if [ -d ".git" ]; then
             echo -e "  ${GREEN}✓${NC} Template repository detected. Preserving git (pass a project name or --clean-git to detach)."
         fi
     else
-        # Running inside an existing external project!
-        echo -e "  ${GREEN}✓${NC} Existing project repository detected (${REMOTE_URL:-local git repo})"
-        echo -e "  ${GREEN}✓${NC} Git history, branches, and remotes preserved 100% intact"
+        # Running inside an existing external repository!
+        if [ -t 0 ] && [ -n "$REMOTE_URL" ]; then
+            echo -e "${YELLOW}▸ Existing git repository detected (${REMOTE_URL}).${NC}"
+            echo -e "  Is this a base for a new project of your own?"
+            echo -e "    1) Yes: Start fresh git repository (clean slate, recommended for new project)"
+            echo -e "    2) Yes: Keep commit history, but disconnect remote origin (ready for your repo)"
+            echo -e "    3) No: Keep existing git, history, and remotes 100% intact (contributor / own repo)"
+            echo -ne "${BOLD}  Select [1/2/3, default: 3]: ${NC}"
+            read -r GIT_CHOICE
+            case "$GIT_CHOICE" in
+                1)
+                    echo -e "${BLUE}▸ Detaching git history...${NC}"
+                    rm -rf .git
+                    git init -b main > /dev/null 2>&1 || git init > /dev/null 2>&1
+                    echo -e "  ${GREEN}✓${NC} Initialized fresh Git repository (branch: main)"
+                    CREATE_BASELINE_COMMIT=true
+                    ;;
+                2)
+                    git remote remove origin 2>/dev/null || true
+                    echo -e "  ${GREEN}✓${NC} Removed remote origin (${REMOTE_URL})."
+                    echo -e "  ${BLUE}▸${NC} Ready to connect your repo: ${BOLD}git remote add origin <your-repo-url>${NC}"
+                    ;;
+                *)
+                    echo -e "  ${GREEN}✓${NC} Git history, branches, and remotes preserved 100% intact"
+                    ;;
+            esac
+        else
+            echo -e "  ${GREEN}✓${NC} Existing project repository detected (${REMOTE_URL:-local git repo})"
+            echo -e "  ${GREEN}✓${NC} Git history, branches, and remotes preserved 100% intact"
+        fi
     fi
 else
     echo -e "${BLUE}▸ No git repository detected. Initializing git...${NC}"
