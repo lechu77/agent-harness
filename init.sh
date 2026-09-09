@@ -261,6 +261,31 @@ EOF
     echo -e "  ${GREEN}✓${NC} Auto-provisioned missing .github/copilot-instructions.md"
 fi
 
+if [ ! -f ".env.example" ]; then
+    cat << 'EOF' > .env.example
+# Environment Variables Template
+# Copy this file to .env and fill in real values.
+# NEVER commit .env to git.
+
+# ──────────────────────────────────────────────
+# CANARY TOKEN — Exfiltration Detection Trap
+# If this token appears in ANY external log, webhook,
+# analytics dashboard, or third-party service,
+# assume immediate credential compromise.
+# Generate your own at https://canarytokens.org
+# ──────────────────────────────────────────────
+CANARY_TOKEN=canary_NEVER_USE_THIS_VALUE_it_is_a_trap_abc123xyz
+
+# ──────────────────────────────────────────────
+# Project-Specific Variables
+# ──────────────────────────────────────────────
+# DATABASE_URL=
+# API_KEY=
+# SECRET_KEY=
+EOF
+    echo -e "  ${GREEN}✓${NC} Auto-provisioned missing .env.example (with canary token)"
+fi
+
 # ── 5. Dev Environment Detection & Bootstrap ──────────────
 # Detect project type and document commands for future agent sessions.
 echo ""
