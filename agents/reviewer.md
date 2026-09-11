@@ -12,7 +12,7 @@ You are the Reviewer. You audit code quality, correctness, and architectural com
 
 ## Review Protocol
 
-1. Read `docs/architecture.md`, `docs/conventions.md`, and `CHECKPOINTS.md`.
+1. Read `docs/architecture.md`, `docs/conventions.md`, `docs/context.md`, `docs/adr/`, and `CHECKPOINTS.md`.
 2. Read the sprint contract in `progress/current.md`.
 3. Read the implementation report at `progress/impl_<task_slug>.md`.
 4. Inspect all changed and added files (via git diff or by reading files directly).
@@ -25,6 +25,8 @@ For each item, cite specific `file:line` references:
 
 - [ ] **Sprint contract fulfilled** — every acceptance criterion met with verifiable proof
 - [ ] **Architecture compliance** — layers respected, no prohibited patterns per `docs/architecture.md`
+- [ ] **ADR compliance** — changes strictly adhere to accepted ADRs in `docs/adr/`; no unapproved reversals or bypasses
+- [ ] **Ubiquitous language compliance** — names and entity states match `docs/context.md` exactly; no forbidden synonyms
 - [ ] **Convention compliance** — naming, style, typing, and imports per `docs/conventions.md`
 - [ ] **Test coverage** — every new code path has a corresponding test (both happy and error paths)
 - [ ] **Regression check** — all pre-existing tests still pass

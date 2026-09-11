@@ -1,7 +1,7 @@
 # Rock-Solid Vibecoding Agent Harness
 
 > **by Lechu**  
-> *Inspired by Anthropic's Agent Harness Research and Hardened with Extreme Cybersecurity & Anti-Exfiltration Defenses.*
+> *Inspired by Anthropic's Agent Harness Research and Matt Pocock's software engineering workflows (`mattpocock/skills`), hardened with Extreme Cybersecurity & Anti-Exfiltration Defenses.*
 
 A permanent, zero-maintenance harness template for autonomous AI pair programming. 
 
@@ -12,8 +12,11 @@ Set it up **once**, and let your agents handle planning, coding, quality double-
 ## The Philosophy: Fire & Forget + Autonomous Guardrails
 
 - **Run `init.sh` ONCE (Fire & Forget)**: Execute `./init.sh` only when bootstrapping a new project. You can even let it delete itself upon completion. Neither you nor the agents ever run it again.
+- **Preventive Grilling Protocol (Ambiguity & Bifurcation Gate)**: Inspired by Matt Pocock's prompt-interview techniques, the Leader pauses to ask 2–3 structured questions *only* when detecting critical architectural forks (e.g. Cookies vs JWT, SQL vs NoSQL) or destructive ambiguity. Routine or clear tasks bypass this check and proceed 100% autonomously.
+- **Ubiquitous Language & Domain Context (`docs/context.md`)**: Prevents LLM synonym hallucination and naming drift (`customer` vs `client`, `item` vs `product`) by enforcing canonical entities, lifecycle states, and forbidden synonym tables across Implementer and Reviewer.
+- **Architecture Decision Records (ADRs in `docs/adr/`)**: Structural architectural decisions are recorded in lightweight ADRs (`docs/adr/0001-<slug>.md`). Subsequent agents are strictly prohibited from undoing or violating accepted ADRs without explicit justification.
 - **Autonomous Multi-Agent Guardrails**: Once initialized, your agents talk to each other to plan, build, sanitize, and audit every change:
-  - **Sanitization Guardrail (`reviewer.md`)**: Re-reads all code adversarially, runs test suites independently, strips console logs/debug prints, and enforces architecture conventions.
+  - **Sanitization Guardrail (`reviewer.md`)**: Re-reads all code adversarially, runs test suites independently, strips console logs/debug prints, and enforces architecture conventions, ADRs, and ubiquitous language.
   - **Cybersecurity & Anti-Exfiltration Guardrail (`security-reviewer.md`)**: Scans every line for hardcoded API keys/tokens, blocks unauthorized network egress, stops prompt injections, and validates supply chain dependencies.
 - **Zero Micromanagement**: You don't edit JSON files, task backlogs, or markdown templates. You simply tell your AI in chat what you want to build; the **Leader** agent decomposes tasks and coordinates the guardrails.
 - **Tool Agnostic**: Works natively with **Antigravity**, **Cursor**, **GitHub Copilot**, **Windsurf**, and **Claude Code**.
@@ -173,6 +176,9 @@ Every tool reads from `AGENTS.md` and `agents/` automatically:
 │   ├── reviewer.md                   # Quality & code sanitization auditor (read-only)
 │   └── security-reviewer.md          # Cybersecurity & anti-exfiltration gate (read-only)
 ├── docs/                             # Progressive disclosure guides
+│   ├── context.md                    # Domain glossary, canonical entities & anti-synonyms
+│   ├── adr/                          # Architecture Decision Records
+│   │   └── template.md               # Lightweight ADR template
 │   ├── architecture.md               # Architectural layers and prohibited patterns
 │   ├── conventions.md                # Language style & testing standards
 │   ├── security.md                   # Extreme security policy & egress whitelist

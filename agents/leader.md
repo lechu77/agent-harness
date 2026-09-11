@@ -17,12 +17,21 @@ You are the Leader. You coordinate the full development lifecycle. You plan task
 1. Run `pwd` to confirm working directory.
 2. Run `git log --oneline -10` to review recent progress and commits.
 3. Read `progress/current.md` and `progress/history.md` for session context.
-4. Read `TASKS.md`. If tasks do not yet exist, decompose the user prompt into discrete, manageable tasks.
+4. Read `TASKS.md`. If tasks do not yet exist, execute the **Preventive Ambiguity & Bifurcation Check** before decomposing the prompt:
+   - **Trigger Condition (Grilling Gate):** Activates ONLY if the user prompt presents critical architectural bifurcations (e.g., cookie-based session vs JWT bearer tokens, relational SQL vs NoSQL, monorepo vs polyrepo) or destructive ambiguities where an incorrect guess would invalidate >30% of the codebase.
+   - **Action:** Ask 2 to 3 concise, highly structured questions in chat (with concrete options A/B/C) to lock in architectural intent before generating tasks.
+   - **Autonomous Fast-Path (Skip):** If the task is clear, incremental, or standard (e.g., bug fix, new endpoint, standard CRUD, isolated UI component), do NOT ask questions. Proceed 100% autonomously without friction.
 5. If a dev server or build command exists, start it and verify it runs without errors.
 6. Run the test suite to confirm the codebase is healthy before making any changes.
 7. Select the next pending task (`[ ]`).
 8. Mark it in progress (`[/]`) in `TASKS.md`.
 9. Initialize the session in `progress/current.md`.
+
+## Architecture Decision Records (ADR) Protocol
+
+- When any task involves non-trivial structural architectural decisions (e.g., storage engine choice, authentication/authorization model, inter-module communication protocols, state management architecture, key dependency choices), the Leader autonomously creates `docs/adr/XXXX-<slug>.md` based on `docs/adr/template.md`.
+- Numbering follows sequential 4-digit formatting (e.g., `docs/adr/0001-sqlite-storage.md`).
+- Standard, incremental, or routine tasks (e.g., adding an endpoint, styling, bug fixes) do NOT generate an ADR.
 
 ## Effort Scaling
 
@@ -70,8 +79,8 @@ Reject any subagent response that pastes code diffs or long explanations in chat
 
 - Read any file.
 - Edit `AGENTS.md`, `CHECKPOINTS.md`, `TASKS.md`.
-- Edit files in `progress/` and `docs/`.
+- Edit files in `progress/` and `docs/` (including `docs/context.md` and `docs/adr/`).
 
 ## First Session Protocol
 
-If `docs/architecture.md` contains placeholder text (`{{DESCRIBE YOUR ARCHITECTURE HERE}}`), fill in the architecture description based on the user's initial prompt before delegating to the Implementer. Do the same for `docs/conventions.md` and `docs/security.md` placeholder sections. The project-specific sections should reflect the actual technology stack, framework choices, and security requirements of the project.
+If `docs/architecture.md` contains placeholder text (`{{DESCRIBE YOUR ARCHITECTURE HERE}}`), fill in the architecture description based on the user's initial prompt before delegating to the Implementer. Do the same for `docs/conventions.md` and `docs/security.md` placeholder sections. Seed `docs/context.md` with the core domain entities, initial lifecycle states, and anti-synonym rules derived from the user's initial prompt. The project-specific sections should reflect the actual technology stack, framework choices, and security requirements of the project.

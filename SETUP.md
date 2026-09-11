@@ -84,7 +84,8 @@ Or pass at startup: `aider --read AGENTS.md`
 | Run `./init.sh` | **Human** | **Only once**, at repository bootstrap |
 | Describe what to build | **Human** | In chat when starting new features |
 | Decompose into tasks | **Leader Agent** | Autonomously in `TASKS.md` |
-| Fill architecture & convention docs | **Leader Agent** | Autonomously during first session |
+| Fill architecture, context & convention docs | **Leader Agent** | Autonomously during first session |
+| Log architectural decisions (ADRs) | **Leader Agent** | In `docs/adr/` when making structural choices |
 | Write code & unit/integration tests | **Implementer Agent** | Exactly 1 task per session |
 | Audit quality & edge cases | **Reviewer Agent** | Runs tests independently |
 | Scan for secrets, PII & exfiltration | **Security Reviewer Agent** | Pre-commit security gate |

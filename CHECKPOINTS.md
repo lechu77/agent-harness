@@ -13,6 +13,8 @@
 - [ ] `TASKS.md` exists and is non-empty
 - [ ] `progress/current.md` exists
 - [ ] `progress/history.md` exists
+- [ ] `docs/context.md` exists
+- [ ] `docs/adr/template.md` exists
 - [ ] `docs/architecture.md` exists
 - [ ] `docs/conventions.md` exists
 - [ ] `docs/verification.md` exists
@@ -32,6 +34,8 @@
 ## C3: Architecture Compliance
 
 - [ ] Code directories contain only files planned in `docs/architecture.md`
+- [ ] Code strictly adheres to accepted ADRs in `docs/adr/`
+- [ ] Naming and entity states strictly follow `docs/context.md` (no forbidden synonyms or naming drift)
 - [ ] No unauthorized external dependencies
 - [ ] No dangling debug statements (`print()`, `console.log()`, `debugger`)
 - [ ] No TODOs without actionable context

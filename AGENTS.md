@@ -8,12 +8,13 @@
 ## 1. Core Workflow
 
 1. **User Prompt**: The user tells the AI in chat what they want to build.
-2. **Leader Planning**: The **Leader** agent interprets the request, defines or updates tasks in `TASKS.md`, and sets the active task in `progress/current.md`.
-3. **Execution**: The Leader delegates to:
-   - **Implementer**: Builds exactly 1 task, writes production code and tests.
-   - **Reviewer**: Audits code quality, checks test coverage, and verifies against `CHECKPOINTS.md`.
+2. **Preventive Ambiguity Check**: If the prompt presents critical architectural bifurcations or destructive ambiguity, the Leader asks 2-3 structured questions. If clear or incremental, proceeds 100% autonomously.
+3. **Leader Planning**: The **Leader** records non-trivial structural decisions in `docs/adr/`, seeds or references `docs/context.md`, defines or updates tasks in `TASKS.md`, and sets the active task in `progress/current.md`.
+4. **Execution**: The Leader delegates to:
+   - **Implementer**: Builds exactly 1 task, writes production code and tests, adhering strictly to `docs/context.md` and accepted ADRs.
+   - **Reviewer**: Audits code quality, checks test coverage, verifies ubiquitous language and ADR compliance, and validates against `CHECKPOINTS.md`.
    - **Security Reviewer**: Scans for hardcoded secrets, PII leaks, exfiltration risks, and git safety.
-4. **Task Completion**: Only after both Reviewer (`APPROVED`) and Security Reviewer (`SECURE`) pass, the Leader marks the task as `[x]` in `TASKS.md` and appends a summary to `progress/history.md`.
+5. **Task Completion**: Only after both Reviewer (`APPROVED`) and Security Reviewer (`SECURE`) pass, the Leader marks the task as `[x]` in `TASKS.md` and appends a summary to `progress/history.md`.
 
 ---
 
@@ -24,6 +25,8 @@
 | `TASKS.md`                     | Task backlog (`[ ]` pending, `[/]` active, `[x]` done)    | Always, at startup     |
 | `progress/current.md`          | Active task scratchpad and live logs                      | Always, at startup     |
 | `progress/history.md`          | Append-only log of completed tasks                        | For historical context |
+| `docs/context.md`              | Domain glossary, canonical entities & anti-synonyms       | Before planning, implementing, or reviewing |
+| `docs/adr/`                    | Architecture Decision Records (`template.md` & ADR logs)  | When deciding, building, or auditing architecture |
 | `docs/architecture.md`         | System design standards and prohibited patterns           | Before implementing    |
 | `docs/conventions.md`          | Code style, typing, and testing rules                     | Before writing code    |
 | `docs/security.md`             | Security policy and vulnerability checklists              | Before security review |
@@ -52,13 +55,15 @@
 
 ```
 1. Leader reads user request & TASKS.md.
-2. If tasks are needed, Leader adds them to TASKS.md.
-3. Leader selects the highest-priority pending task ([ ]).
-4. Marks it in progress: [/] in TASKS.md.
-5. Logs task and brief plan in progress/current.md.
-6. Delegates to Implementer -> Reviewer -> Security Reviewer.
-7. Upon full approval, marks task completed: [x] in TASKS.md.
-8. Moves summary from progress/current.md into progress/history.md.
+2. Preventive check: If critical bifurcation or destructive ambiguity exists, ask 2-3 structured questions. Else proceed autonomously.
+3. If structural architectural decisions are made, Leader documents an ADR in docs/adr/.
+4. If tasks are needed, Leader adds them to TASKS.md.
+5. Leader selects the highest-priority pending task ([ ]).
+6. Marks it in progress: [/] in TASKS.md.
+7. Logs task and brief plan in progress/current.md.
+8. Delegates to Implementer -> Reviewer -> Security Reviewer.
+9. Upon full approval, marks task completed: [x] in TASKS.md.
+10. Moves summary from progress/current.md into progress/history.md.
 ```
 
 ---
