@@ -57,7 +57,9 @@ cd mi-proyecto
 Si ya tenías proyectos usando una versión previa de `agent-harness` y querés incorporar las últimas mejoras (ADRs, Grilling preventivo, Ubiquitous Language) sin perder nada:
 ```bash
 cd mi-proyecto-existente
-/Users/z0051syf/workspace/Lechu/GitHub/Lechu77/agent-harness/init.sh --update
+../agent-harness/init.sh --update
+# o pasando la ruta absoluta donde tengas clonado el template:
+# /ruta/hacia/agent-harness/init.sh --update
 ```
 **Garantías del modo `--update`:**
 - Actualiza los roles en `agents/` con los últimos protocolos.
