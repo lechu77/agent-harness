@@ -37,17 +37,23 @@ dir_exists() { [ -d "$1" ]; }
 
 FORCE_CLEAN=false
 FORCE_KEEP=false
+IS_UPDATE_MODE=false
 
 for arg in "$@"; do
     case "$arg" in
         --clean-git) FORCE_CLEAN=true ;;
         --keep-git) FORCE_KEEP=true ;;
+        --update)
+            IS_UPDATE_MODE=true
+            FORCE_KEEP=true
+            ;;
         --help|-h)
             echo -e "${BOLD}Agent Harness — Setup & Environment Verification${NC}"
             echo ""
             echo "Usage:"
             echo "  ./init.sh                     Smart setup (prompts if repo exists; runs clean if new)"
             echo "  /path/to/agent-harness/init.sh  Run remotely from any project"
+            echo "  /path/to/agent-harness/init.sh --update  Update existing project to latest harness safely"
             echo "  ./init.sh --clean-git         Force clean slate (reset Git from zero)"
             echo "  ./init.sh --keep-git          Force preserve existing Git repository"
             echo "  ./init.sh --help              Show this screen"
@@ -79,21 +85,48 @@ if [ "$IS_EXTERNAL_RUN" = true ]; then
     echo -e "  Template Source : ${BOLD}${SCRIPT_DIR}${NC}"
     echo -e "  Target Project  : ${BOLD}${CURRENT_DIR}${NC}"
     echo ""
-    echo -e "${BLUE}▸ Deploying Agent Harness into target project...${NC}"
+    if [ "$IS_UPDATE_MODE" = true ]; then
+        echo -e "${BLUE}▸ Updating Agent Harness in target project (--update)...${NC}"
+    else
+        echo -e "${BLUE}▸ Deploying Agent Harness into target project...${NC}"
+    fi
 
-    # Directories
-    for dir in agents docs progress; do
-        if [ -d "$SCRIPT_DIR/$dir" ]; then
-            mkdir -p "$CURRENT_DIR/$dir"
-            cp -R "$SCRIPT_DIR/$dir/." "$CURRENT_DIR/$dir/" 2>/dev/null || true
-            echo -e "  ${GREEN}✓${NC} Deployed $dir/"
+    # 1. Agent roles (always update to latest harness standards)
+    if [ -d "$SCRIPT_DIR/agents" ]; then
+        mkdir -p "$CURRENT_DIR/agents"
+        cp -R "$SCRIPT_DIR/agents/." "$CURRENT_DIR/agents/" 2>/dev/null || true
+        echo -e "  ${GREEN}✓${NC} Deployed agents/ (latest role definitions)"
+    fi
+
+    # 2. Docs directory (deploy ADR template and context; preserve existing project-specific architecture)
+    if [ -d "$SCRIPT_DIR/docs" ]; then
+        mkdir -p "$CURRENT_DIR/docs/adr"
+        cp "$SCRIPT_DIR/docs/adr/template.md" "$CURRENT_DIR/docs/adr/" 2>/dev/null || true
+        for doc in "$SCRIPT_DIR/docs"/*; do
+            docname="$(basename "$doc")"
+            if [ "$docname" != "adr" ]; then
+                if [ ! -f "$CURRENT_DIR/docs/$docname" ]; then
+                    cp "$doc" "$CURRENT_DIR/docs/$docname" 2>/dev/null || true
+                    echo -e "  ${GREEN}✓${NC} Deployed docs/$docname"
+                fi
+            fi
+        done
+        echo -e "  ${GREEN}✓${NC} Deployed docs/ (preserved project architecture & conventions)"
+    fi
+
+    # 3. Progress directory (never clobber existing active task or history)
+    mkdir -p "$CURRENT_DIR/progress"
+    for prog in current.md history.md; do
+        if [ ! -f "$CURRENT_DIR/progress/$prog" ] && [ -f "$SCRIPT_DIR/progress/$prog" ]; then
+            cp "$SCRIPT_DIR/progress/$prog" "$CURRENT_DIR/progress/$prog" 2>/dev/null || true
         fi
     done
+    echo -e "  ${GREEN}✓${NC} Preserved progress/ (active task & history safe)"
 
-    # Tool config directories
+    # 4. Tool config directories
     if [ -d "$SCRIPT_DIR/.github" ]; then
         mkdir -p "$CURRENT_DIR/.github"
-        if [ ! -f "$CURRENT_DIR/.github/copilot-instructions.md" ]; then
+        if [ ! -f "$CURRENT_DIR/.github/copilot-instructions.md" ] || [ "$IS_UPDATE_MODE" = true ]; then
             cp "$SCRIPT_DIR/.github/copilot-instructions.md" "$CURRENT_DIR/.github/" 2>/dev/null || true
             echo -e "  ${GREEN}✓${NC} Deployed .github/copilot-instructions.md"
         fi
@@ -107,13 +140,21 @@ if [ "$IS_EXTERNAL_RUN" = true ]; then
         fi
     fi
 
-    # Core files (do not overwrite if already existing in target)
-    for file in AGENTS.md TASKS.md CHECKPOINTS.md SETUP.md CLAUDE.md .cursorrules .windsurfrules .env.example; do
+    # 5. Core files (in update mode, refresh AGENTS.md, CHECKPOINTS.md, SETUP.md and adapters; NEVER overwrite TASKS.md)
+    for file in AGENTS.md CHECKPOINTS.md SETUP.md CLAUDE.md .cursorrules .windsurfrules; do
         if [ -f "$SCRIPT_DIR/$file" ]; then
-            if [ ! -f "$CURRENT_DIR/$file" ]; then
+            if [ ! -f "$CURRENT_DIR/$file" ] || [ "$IS_UPDATE_MODE" = true ]; then
                 cp "$SCRIPT_DIR/$file" "$CURRENT_DIR/$file"
                 echo -e "  ${GREEN}✓${NC} Deployed $file"
             fi
+        fi
+    done
+
+    # TASKS.md and .env.example (NEVER overwritten in update mode)
+    for file in TASKS.md .env.example; do
+        if [ -f "$SCRIPT_DIR/$file" ] && [ ! -f "$CURRENT_DIR/$file" ]; then
+            cp "$SCRIPT_DIR/$file" "$CURRENT_DIR/$file"
+            echo -e "  ${GREEN}✓${NC} Deployed $file"
         fi
     done
 
@@ -433,14 +474,22 @@ fi
 echo ""
 echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
 if [ $FAIL -eq 0 ]; then
-    echo -e "  ${GREEN}${BOLD}✓ HARNESS READY AND ROCK SOLID!${NC}"
-    echo ""
-    echo -e "  ${BOLD}Setup complete.${NC}"
-    echo -e "  You do ${YELLOW}NOT${NC} need to run init.sh again."
-    echo ""
-    echo -e "  ${BLUE}Next Step:${NC}"
-    echo -e "  Open your tool (Antigravity, Cursor, Copilot, Windsurf, Claude Code)"
-    echo -e "  and describe what you want to build. Your agents will handle the rest."
+    if [ "$IS_UPDATE_MODE" = true ]; then
+        echo -e "  ${GREEN}${BOLD}✓ HARNESS SUCCESSFULLY UPDATED TO LATEST VERSION!${NC}"
+        echo ""
+        echo -e "  ${BOLD}Update complete.${NC}"
+        echo -e "  Agents, ADR templates, domain context, and checkpoints are updated."
+        echo -e "  Your tasks (TASKS.md), history, and custom architecture files were kept 100% intact."
+    else
+        echo -e "  ${GREEN}${BOLD}✓ HARNESS READY AND ROCK SOLID!${NC}"
+        echo ""
+        echo -e "  ${BOLD}Setup complete.${NC}"
+        echo -e "  You do ${YELLOW}NOT${NC} need to run init.sh again."
+        echo ""
+        echo -e "  ${BLUE}Next Step:${NC}"
+        echo -e "  Open your tool (Antigravity, Cursor, Copilot, Windsurf, Claude Code)"
+        echo -e "  and describe what you want to build. Your agents will handle the rest."
+    fi
     echo ""
     
     # Self-deletion only applies when running locally inside a project

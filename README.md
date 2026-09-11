@@ -53,7 +53,19 @@ cd mi-proyecto
 - **Zero-Copy**: Al correrlo remotamente (`../agent-harness/init.sh`), despliega todos los archivos, guardrails y adaptadores sin que tengas que copiar nada a mano.
 - **Protección de la plantilla maestra**: El `init.sh` original de `agent-harness` **nunca se borra**. Solo ofrece eliminar la copia local del proyecto destino.
 
-Una vez que termina en verde, **no volvés a ejecutar `init.sh` nunca más**. Abrís tu editor y empezás a vibecodear.
+### Actualizar repositorios existentes (`--update`)
+Si ya tenías proyectos usando una versión previa de `agent-harness` y querés incorporar las últimas mejoras (ADRs, Grilling preventivo, Ubiquitous Language) sin perder nada:
+```bash
+cd mi-proyecto-existente
+/Users/z0051syf/workspace/Lechu/GitHub/Lechu77/agent-harness/init.sh --update
+```
+**Garantías del modo `--update`:**
+- Actualiza los roles en `agents/` con los últimos protocolos.
+- Despliega `docs/adr/template.md` y `docs/context.md`.
+- Actualiza `AGENTS.md`, `CHECKPOINTS.md` y adaptadores de herramientas.
+- **Preserva intactos**: tus tareas en `TASKS.md`, tu historial en `progress/`, tu repositorio Git, y las personalizaciones previas en `docs/architecture.md` o `docs/conventions.md`.
+
+Una vez que termina en verde, **no volvés a ejecutar `init.sh`**. Abrís tu editor y empezás a vibecodear.
 
 ---
 
