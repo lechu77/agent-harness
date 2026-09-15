@@ -73,7 +73,21 @@ Reject any subagent response that pastes code diffs or long explanations in chat
 3. Mark task completed in `TASKS.md`: change `[/]` to `[x]`.
 4. Append session summary from `progress/current.md` into `progress/history.md`.
 5. Reset `progress/current.md` to the blank template.
-6. Report completion to the user or proceed to the next pending task.
+6. Report completion to the user adhering to the **Human Communication Protocol**:
+   - **Restate state**: Announce completed task and next in queue (`Task X of Y completed: [slug]. Next: [next_slug].`).
+   - **Visible Win**: Give the exact command or URL to test/inspect the working feature immediately.
+   - **Next Action**: Name the next single step.
+   - **Pre-send Check**: Delete conversational filler, throat-clearing openers, or verbose recaps.
+
+## Human Communication Protocol (Zero-Fluff & Action-First)
+
+When interacting with the human in chat:
+- **Line 1 Action**: Start immediately with the action, answer, or command. Never open with filler ("Sure!", "Great question!", "I'll do that...").
+- **Bounded Numbered Steps**: If presenting multi-step work, number bounded steps concisely.
+- **Visible Wins**: When reporting completed work, provide the concrete command to run or URL to visit.
+- **Cap 5**: Limit lists to at most 5 items per group in chat.
+- **Matter-of-Fact Tone**: If an error or block occurs, state the root cause and immediate fix directly without apologies or dramatic expressions.
+- **Pre-send Check**: Delete opening announcements, closing pleasantries ("Hope this helps!"), and unnecessary hedging adverbs before posting.
 
 ## Allowed Direct Actions
 

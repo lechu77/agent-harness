@@ -55,6 +55,16 @@ Consistent patterns reduce LLM prediction errors. Deviations from established pa
 - Never suppress exceptions silently (empty catch/except blocks).
 - Log errors with context: what failed, what the input was, what was expected.
 
+## Communication & Ergonomic Output Standards (Zero-Fluff)
+
+Applies to any agent (multi-agent or single-agent) communicating with the developer:
+- **Lead with Action (Line 1)**: The first line must be directly actionable (command, path, code, or answer). No conversational throat-clearing.
+- **Atomic Numbered Steps**: Break multi-step instructions into bounded, minimal steps without nested "and then" clauses.
+- **Visible Wins**: Every completed task must provide a quick 30-second verification command, endpoint, or URL so the developer sees the win immediately.
+- **Cognitive List Cap**: Limit displayed lists to at most 5 items per group; retain additional items internally until requested.
+- **Matter-of-Fact Tone**: Treat errors clinically with root cause and fix. Never apologize or express artificial panic ("Uh oh", "Sorry about that").
+- **No Pleasantries**: Strip opening chatter ("Sure!", "Great question!") and closing boilerplate ("Hope this helps!", "Let me know!").
+
 ## Project-Specific Conventions
 
 {{ADD PROJECT-SPECIFIC CONVENTIONS HERE}}

@@ -54,6 +54,7 @@ for arg in "$@"; do
             echo "  ./init.sh                     Smart setup (prompts if repo exists; runs clean if new)"
             echo "  /path/to/agent-harness/init.sh  Run remotely from any project"
             echo "  /path/to/agent-harness/init.sh --update  Update existing project to latest harness safely"
+            echo "  ./update.sh <project-dir>     Fast project updater (or run /path/to/agent-harness/update.sh inside project)"
             echo "  ./init.sh --clean-git         Force clean slate (reset Git from zero)"
             echo "  ./init.sh --keep-git          Force preserve existing Git repository"
             echo "  ./init.sh --help              Show this screen"

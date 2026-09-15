@@ -48,6 +48,7 @@
 - **Leave the repo clean.** Before ending any session: (1) all tests pass, (2) the app builds and starts without errors, (3) no half-implemented features — revert or complete, (4) no temp files, no debug prints (`console.log`, `print()`), no orphaned TODOs, (5) git commit with a descriptive message, (6) update `progress/current.md` with current state.
 - **Git commit after every completed feature.** Use descriptive commit messages (`feat:`, `fix:`, `refactor:`). This enables rollback via `git revert` or `git stash` if a future session breaks the codebase.
 - **Anti-telephone rule.** Subagents write full reports into `progress/*.md` files on disk and return ONLY a 1-line reference in chat (e.g., `done -> progress/impl_task.md`). Never paste diffs in chat.
+- **Zero-fluff communication.** Never open with throat-clearing pleasantries ("Great question!", "Sure!"). The first line is an action, path, or direct answer. Follow Section 7.
 
 ---
 
@@ -87,3 +88,25 @@ If your AI tool does not support subagents or multi-agent delegation, operate as
 5. **Closure phase**: Mark the task `[x]` in `TASKS.md`. Git commit. Append summary to `progress/history.md`. Reset `progress/current.md`.
 
 The same quality standards apply regardless of whether you are one agent or four.
+
+---
+
+## 7. Human Communication Protocol (Zero-Fluff & Action-First)
+
+Inspired by cognitive ease and ADHD-friendly engineering workflows:
+
+1. **Lead with the next action (Line 1)**: The first line is something the human can do or the direct answer (a terminal command, file path, code snippet, or binary confirmation). Prose comes after, if at all.
+   - *Forbidden openers:* "Great question!", "Let me think...", "Sure, I'll help with that", "I understand that you want...", "To answer your question..."
+2. **Number multi-step tasks**: Use bounded numbered steps (`1.`, `2.`, `3.`). Keep them minimal; fold trivial actions together. Never write "and then" twice in one step.
+3. **End with one concrete next action**: If anything remains to be done, close by naming ONE action the human can complete in under 2 minutes (e.g. `Next: run npm test and paste failures`).
+4. **Make completed work visible (Quick Wins)**: When finishing a task, demonstrate the result concretely: provide the exact command or URL so the human can verify the win immediately (e.g. `Try: npm run dev and visit http://localhost:3000/dashboard`).
+5. **Suppress tangents & scope creep**: Complete what was requested first. If secondary improvements, outdated dependencies, or refactorings are noticed, present them at the very end as separate, optional next tasks.
+6. **Restate state every turn**: When updating the user, state the active task and progress explicitly (`Task 2 of 4 done: [auth_jwt]. Next: [auth_middleware].`).
+7. **Cap lists to 5 items**: Never overwhelm chat with massive bullet lists. Show up to 5 most relevant items per group; hold the rest internally and offer them on request.
+8. **Matter-of-fact tone for errors**: Never apologize or use dramatic phrases ("Uh-oh!", "Unfortunately..."). State the root cause and the immediate fix directly.
+9. **No closing pleasantries**: Forbidden closers: "Hope this helps!", "Let me know if you need anything else!", "Feel free to ask!". Conclude when the answer or task is finished.
+10. **Pre-send check**: Before sending any message to the user, delete:
+    - The first sentence if it announces what you are about to do.
+    - The last sentence if it asks polite filler questions or recaps what was already said.
+    - Any hedging adverbs ("perhaps", "might possibly") that add no real uncertainty.
+

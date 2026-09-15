@@ -1,7 +1,7 @@
 # Rock-Solid Vibecoding Agent Harness
 
 > **by Lechu**  
-> *Inspired by Anthropic's Agent Harness Research and Matt Pocock's software engineering workflows (`mattpocock/skills`), hardened with Extreme Cybersecurity & Anti-Exfiltration Defenses.*
+> *Inspired by Anthropic's Agent Harness Research, Matt Pocock's software engineering workflows (`mattpocock/skills`), and ADHD-friendly ergonomic output (`ayghri/i-have-adhd`), hardened with Extreme Cybersecurity & Anti-Exfiltration Defenses.*
 
 A permanent, zero-maintenance harness template for autonomous AI pair programming. 
 
@@ -12,6 +12,7 @@ Set it up **once**, and let your agents handle planning, coding, quality double-
 ## The Philosophy: Fire & Forget + Autonomous Guardrails
 
 - **Run `init.sh` ONCE (Fire & Forget)**: Execute `./init.sh` only when bootstrapping a new project. You can even let it delete itself upon completion. Neither you nor the agents ever run it again.
+- **Zero-Fluff & Action-First Communication**: Inspired by cognitive ease and `ayghri/i-have-adhd`, eliminates LLM verbiage, conversational filler, and throat-clearing preambles (*"¡Gran pregunta!", "Claro, con gusto..."*). The first line is always an immediate action, command, path, or direct result. Completed tasks deliver concrete visible wins (quick 30-second verification), bounded atomic steps, and lists capped at 5 items.
 - **Preventive Grilling Protocol (Ambiguity & Bifurcation Gate)**: Inspired by Matt Pocock's prompt-interview techniques, the Leader pauses to ask 2–3 structured questions *only* when detecting critical architectural forks (e.g. Cookies vs JWT, SQL vs NoSQL) or destructive ambiguity. Routine or clear tasks bypass this check and proceed 100% autonomously.
 - **Ubiquitous Language & Domain Context (`docs/context.md`)**: Prevents LLM synonym hallucination and naming drift (`customer` vs `client`, `item` vs `product`) by enforcing canonical entities, lifecycle states, and forbidden synonym tables across Implementer and Reviewer.
 - **Architecture Decision Records (ADRs in `docs/adr/`)**: Structural architectural decisions are recorded in lightweight ADRs (`docs/adr/0001-<slug>.md`). Subsequent agents are strictly prohibited from undoing or violating accepted ADRs without explicit justification.
@@ -53,21 +54,32 @@ cd mi-proyecto
 - **Zero-Copy**: Al correrlo remotamente (`../agent-harness/init.sh`), despliega todos los archivos, guardrails y adaptadores sin que tengas que copiar nada a mano.
 - **Protección de la plantilla maestra**: El `init.sh` original de `agent-harness` **nunca se borra**. Solo ofrece eliminar la copia local del proyecto destino.
 
-### Actualizar repositorios existentes (`--update`)
-Si ya tenías proyectos usando una versión previa de `agent-harness` y querés incorporar las últimas mejoras (ADRs, Grilling preventivo, Ubiquitous Language) sin perder nada:
+### Actualizar repositorios existentes (`./update.sh`)
+Si ya tenías proyectos usando una versión previa de `agent-harness` y querés incorporar las últimas mejoras (Zero-Fluff communication, ADRs, Grilling preventivo, Ubiquitous Language) sin perder nada:
+
+**Opción A — Desde agent-harness hacia cualquier proyecto:**
+```bash
+./update.sh ../mi-proyecto-existente
+# Podés pasar múltiples proyectos en una sola línea:
+# ./update.sh ../proyecto-1 ../proyecto-2
+```
+
+**Opción B — Desde adentro de tu proyecto existente:**
 ```bash
 cd mi-proyecto-existente
-../agent-harness/init.sh --update
-# o pasando la ruta absoluta donde tengas clonado el template:
+/ruta/hacia/agent-harness/update.sh
+# O alternativamente con init.sh:
 # /ruta/hacia/agent-harness/init.sh --update
 ```
-**Garantías del modo `--update`:**
+
+**Garantías de la actualización:**
 - Actualiza los roles en `agents/` con los últimos protocolos.
-- Despliega `docs/adr/template.md` y `docs/context.md`.
-- Actualiza `AGENTS.md`, `CHECKPOINTS.md` y adaptadores de herramientas.
+- Actualiza `AGENTS.md` (Zero-fluff communication), `CHECKPOINTS.md` y adaptadores de herramientas (`.cursorrules`, `CLAUDE.md`, `.windsurfrules`, `.github/copilot-instructions.md`).
+- Despliega `docs/adr/template.md` y `docs/context.md` (si faltaban).
 - **Preserva intactos**: tus tareas en `TASKS.md`, tu historial en `progress/`, tu repositorio Git, y las personalizaciones previas en `docs/architecture.md` o `docs/conventions.md`.
 
 Una vez que termina en verde, **no volvés a ejecutar `init.sh`**. Abrís tu editor y empezás a vibecodear.
+
 
 ---
 

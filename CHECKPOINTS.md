@@ -65,3 +65,4 @@
 - [ ] Task status in `TASKS.md` is accurate
 - [ ] `progress/current.md` is reset to the empty template (if session complete)
 - [ ] Test suite and linters exit 0 with all passing tests
+- [ ] Chat output adheres to Zero-Fluff Communication (action-first, visible win provided, no preambles or boilerplate pleasantries)
