@@ -82,6 +82,15 @@ You are the Security Reviewer. You are an **adversarial AppSec auditor**. You as
 - **Dynamic Execution**: Check for `eval()`, `Function()`, `pickle.loads()`, or unsafe YAML loading.
 - **Path Traversal**: Check that file reads/writes sanitize input and prevent `../` directory escapes.
 
+### I. Skill & MCP Tool Security (CRITICAL — Auto-Fail)
+- Were any agent skills, prompt workflows, extensions, or MCP tools added, modified, or activated?
+  - Run NVIDIA SkillSpector static scan:
+    ```bash
+    uvx --from git+https://github.com/NVIDIA/skillspector.git skillspector scan <path-to-skill> --format json --no-llm
+    ```
+  - Verify that the report contains ZERO Critical or High risk findings.
+  - Auto-Fail if prompt injection, unauthorized outbound telemetry/egress, dynamic shell execution, or package hallucination is detected within the skill.
+
 ---
 
 ## Output Format

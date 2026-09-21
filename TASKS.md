@@ -19,4 +19,5 @@ Format:
 - [-] [task_slug] Task blocked (requires human decision)
 -->
 
+- [x] **skillspector_gate**: Integrate NVIDIA SkillSpector autonomous skill gate
 - [ ] **init_setup**: Initial project structure and setup baseline

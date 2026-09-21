@@ -10,7 +10,9 @@
       "Bash(git log*)",
       "Bash(git diff*)",
       "Bash(git stash*)",
-      "Bash(git checkout*)"
+      "Bash(git checkout*)",
+      "Bash(uvx *skillspector*)",
+      "Bash(skillspector*)"
     ]
   }
 }

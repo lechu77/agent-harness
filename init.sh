@@ -135,7 +135,7 @@ if [ "$IS_EXTERNAL_RUN" = true ]; then
 
     if [ -d "$SCRIPT_DIR/.claude" ]; then
         mkdir -p "$CURRENT_DIR/.claude"
-        if [ ! -f "$CURRENT_DIR/.claude/settings.json" ]; then
+        if [ ! -f "$CURRENT_DIR/.claude/settings.json" ] || [ "$IS_UPDATE_MODE" = true ]; then
             cp "$SCRIPT_DIR/.claude/settings.json" "$CURRENT_DIR/.claude/" 2>/dev/null || true
             echo -e "  ${GREEN}✓${NC} Deployed .claude/settings.json"
         fi
@@ -287,11 +287,35 @@ if [ -n "$STAGED_FILES" ]; then
         exit 1
     fi
 fi
+
+# SkillSpector Skill Gate — Autonomous Skill Scanning
+STAGED_SKILLS=$(git diff --cached --name-only 2>/dev/null | grep -E '(^|\/)(skills\/|\.agents\/skills\/|\.claude\/skills\/).*\.(md|py|sh|json|yaml|yml)$|(\/|^)SKILL\.md$|(\/|^)skill\.md$' || true)
+if [ -n "$STAGED_SKILLS" ]; then
+    if command -v uvx >/dev/null 2>&1 || command -v skillspector >/dev/null 2>&1; then
+        echo -e "\033[0;34m[SKILL GATE] Staged skills detected. Running NVIDIA SkillSpector static scan...\033[0m"
+        for SKILL_TARGET in $STAGED_SKILLS; do
+            if [ -e "$SKILL_TARGET" ]; then
+                SCAN_CMD="uvx --from git+https://github.com/NVIDIA/skillspector.git skillspector scan"
+                command -v skillspector >/dev/null 2>&1 && SCAN_CMD="skillspector scan"
+                SCAN_RES=$($SCAN_CMD "$SKILL_TARGET" --format json --no-llm 2>&1 || true)
+                if echo "$SCAN_RES" | grep -qiE '"severity":\s*"(CRITICAL|HIGH)"|"critical":\s*[1-9]|"high":\s*[1-9]|PROMPT_INJECTION|DATA_EXFILTRATION'; then
+                    echo -e "\033[0;31m[SKILL GATE BLOCKED] SkillSpector detected CRITICAL/HIGH vulnerabilities in $SKILL_TARGET:\033[0m"
+                    echo "$SCAN_RES" | grep -iE 'severity|finding|description|rule' | head -10 || echo "$SCAN_RES" | head -10
+                    exit 1
+                fi
+            fi
+        done
+        echo -e "\033[0;32m[SKILL GATE] Staged skills verified clean by SkillSpector.\033[0m"
+    else
+        echo -e "\033[0;33m[SKILL GATE WARNING] Staged skills detected but 'uvx' / 'skillspector' is not installed. Ensure skills are manually audited.\033[0m"
+    fi
+fi
 HOOK_EOF
         chmod +x "$HOOK_FILE"
-        echo -e "  ${GREEN}✓${NC} Installed pre-commit git security hook"
-    elif ! grep -q "Automated Git Safety Gate" "$HOOK_FILE"; then
-        cat << 'HOOK_EOF' >> "$HOOK_FILE"
+        echo -e "  ${GREEN}✓${NC} Installed pre-commit git security hook (Secrets + SkillSpector)"
+    else
+        if ! grep -q "Automated Git Safety Gate" "$HOOK_FILE"; then
+            cat << 'HOOK_EOF' >> "$HOOK_FILE"
 
 # Automated Git Safety Gate — Appended by agent-harness
 PATTERNS='password\s*=\s*["\x27][^"\x27]+["\x27]|api_key\s*=\s*["\x27]|secret\s*=\s*["\x27]|token\s*=\s*["\x27]|Bearer\s+[A-Za-z0-9_\-\.]{20,}|PRIVATE_KEY|-----BEGIN|ghp_[A-Za-z0-9_]{36}|github_pat_[A-Za-z0-9_]{82}|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9\-]{20,}|xoxb-[0-9]{10,}|xoxp-[0-9]{10,}|glpat-[A-Za-z0-9\-]{20,}'
@@ -307,8 +331,37 @@ if [ -n "$STAGED_FILES" ]; then
     fi
 fi
 HOOK_EOF
-        chmod +x "$HOOK_FILE"
-        echo -e "  ${GREEN}✓${NC} Appended security check to existing pre-commit hook"
+            echo -e "  ${GREEN}✓${NC} Appended security check to existing pre-commit hook"
+        fi
+
+        if ! grep -q "SkillSpector Skill Gate" "$HOOK_FILE"; then
+            cat << 'HOOK_EOF' >> "$HOOK_FILE"
+
+# SkillSpector Skill Gate — Appended by agent-harness
+STAGED_SKILLS=$(git diff --cached --name-only 2>/dev/null | grep -E '(^|\/)(skills\/|\.agents\/skills\/|\.claude\/skills\/).*\.(md|py|sh|json|yaml|yml)$|(\/|^)SKILL\.md$|(\/|^)skill\.md$' || true)
+if [ -n "$STAGED_SKILLS" ]; then
+    if command -v uvx >/dev/null 2>&1 || command -v skillspector >/dev/null 2>&1; then
+        echo -e "\033[0;34m[SKILL GATE] Staged skills detected. Running NVIDIA SkillSpector static scan...\033[0m"
+        for SKILL_TARGET in $STAGED_SKILLS; do
+            if [ -e "$SKILL_TARGET" ]; then
+                SCAN_CMD="uvx --from git+https://github.com/NVIDIA/skillspector.git skillspector scan"
+                command -v skillspector >/dev/null 2>&1 && SCAN_CMD="skillspector scan"
+                SCAN_RES=$($SCAN_CMD "$SKILL_TARGET" --format json --no-llm 2>&1 || true)
+                if echo "$SCAN_RES" | grep -qiE '"severity":\s*"(CRITICAL|HIGH)"|"critical":\s*[1-9]|"high":\s*[1-9]|PROMPT_INJECTION|DATA_EXFILTRATION'; then
+                    echo -e "\033[0;31m[SKILL GATE BLOCKED] SkillSpector detected CRITICAL/HIGH vulnerabilities in $SKILL_TARGET:\033[0m"
+                    echo "$SCAN_RES" | grep -iE 'severity|finding|description|rule' | head -10 || echo "$SCAN_RES" | head -10
+                    exit 1
+                fi
+            fi
+        done
+        echo -e "\033[0;32m[SKILL GATE] Staged skills verified clean by SkillSpector.\033[0m"
+    else
+        echo -e "\033[0;33m[SKILL GATE WARNING] Staged skills detected but 'uvx' / 'skillspector' is not installed. Ensure skills are manually audited.\033[0m"
+    fi
+fi
+HOOK_EOF
+            echo -e "  ${GREEN}✓${NC} Appended SkillSpector gate to existing pre-commit hook"
+        fi
     fi
 fi
 
@@ -330,6 +383,10 @@ Read `AGENTS.md` before doing any work in this repository.
 1. Follow `TASKS.md` for task tracking.
 2. Follow `docs/architecture.md`, `docs/conventions.md`, and `docs/security.md`.
 3. Never hardcode credentials, secrets, or tokens.
+4. Commit after each completed feature with a descriptive message.
+5. Run the test suite before and after changes.
+6. Zero-Fluff Communication: Action-first (Line 1), bounded numbered steps, max 5 items per list, visible wins, zero conversational pleasantries.
+7. Autonomous Skill Gate: Before activating any skill or tool, scan it autonomously with NVIDIA SkillSpector (`uvx --from git+https://github.com/NVIDIA/skillspector.git skillspector scan <target> --format json --no-llm`).
 EOF
     echo -e "  ${GREEN}✓${NC} Auto-provisioned missing .cursorrules"
 fi
@@ -349,6 +406,10 @@ Read `AGENTS.md` before doing any work in this repository.
 1. Follow `TASKS.md` for task selection.
 2. Follow `docs/architecture.md`, `docs/conventions.md`, and `docs/security.md`.
 3. Keep git clean and check `.gitignore`.
+4. Commit after each completed feature with a descriptive message.
+5. Run the test suite before and after changes.
+6. Zero-Fluff Communication: Action-first (Line 1), bounded numbered steps, max 5 items per list, visible wins, zero conversational pleasantries.
+7. Autonomous Skill Gate: Before activating any skill or tool, scan it autonomously with NVIDIA SkillSpector (`uvx --from git+https://github.com/NVIDIA/skillspector.git skillspector scan <target> --format json --no-llm`).
 EOF
     echo -e "  ${GREEN}✓${NC} Auto-provisioned missing .windsurfrules"
 fi
@@ -364,8 +425,36 @@ Read `AGENTS.md` as the primary project navigation map.
 - **Architecture**: Adhere strictly to `docs/architecture.md`. Do not bypass architectural layers.
 - **Code Style & Conventions**: Follow `docs/conventions.md`.
 - **Security**: Follow `docs/security.md` and `agents/security-reviewer.md`. Never hardcode secrets.
+- **Verification**: Run the project test suite (`npm test`, `pytest`, etc.) before proposing changes and after writing code. All tests must pass.
+- **Autonomous Skill Gate**: Before activating or ingesting any skill, prompt workflow, or MCP tool, scan it autonomously with NVIDIA SkillSpector (`uvx --from git+https://github.com/NVIDIA/skillspector.git skillspector scan <target> --format json --no-llm`).
+- **Communication**: Zero-fluff, action-first (Line 1). No conversational preambles ("Sure!", "Great question!") or pleasantries. Bounded numbered steps, max 5 items per list, visible wins first.
 EOF
     echo -e "  ${GREEN}✓${NC} Auto-provisioned missing .github/copilot-instructions.md"
+fi
+
+if [ ! -f ".claude/settings.json" ]; then
+    mkdir -p .claude
+    cat << 'EOF' > .claude/settings.json
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m unittest*)",
+      "Bash(npm test*)",
+      "Bash(pytest*)",
+      "Bash(cargo test*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git stash*)",
+      "Bash(git checkout*)",
+      "Bash(uvx *skillspector*)",
+      "Bash(skillspector*)"
+    ]
+  }
+}
+EOF
+    echo -e "  ${GREEN}✓${NC} Auto-provisioned missing .claude/settings.json"
 fi
 
 if [ ! -f ".env.example" ]; then
@@ -462,8 +551,14 @@ check ".github/copilot-instructions.md exists (GitHub Copilot)" file_exists ".gi
 check "CLAUDE.md exists (Claude Code)" file_exists "CLAUDE.md"
 check ".gitignore exists" file_exists ".gitignore"
 check ".env.example exists (canary token)" file_exists ".env.example"
+check ".claude/settings.json exists (Claude Code permissions)" file_exists ".claude/settings.json"
 
-echo ""
+# SkillSpector Autonomous Gate Readiness
+if command -v uvx > /dev/null 2>&1 || command -v skillspector > /dev/null 2>&1; then
+    echo -e "  ${GREEN}✓${NC} uvx/skillspector available (Autonomous Skill Gate ready)"
+else
+    echo -e "  ${YELLOW}ℹ${NC} uvx not found in PATH (install 'uv' via https://astral.sh/uv to enable background skill scanning)"
+fi
 
 # ── 4. Initial Baseline Git Commit (Template bootstrap only) ──
 if [ "$CREATE_BASELINE_COMMIT" = true ] && [ -d ".git" ]; then
