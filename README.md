@@ -16,12 +16,13 @@ Set it up **once**, and let your agents handle planning, coding, quality double-
 - **Preventive Grilling Protocol (Ambiguity & Bifurcation Gate)**: Inspired by Matt Pocock's prompt-interview techniques, the Leader pauses to ask 2–3 structured questions *only* when detecting critical architectural forks (e.g. Cookies vs JWT, SQL vs NoSQL) or destructive ambiguity. Routine or clear tasks bypass this check and proceed 100% autonomously.
 - **Ubiquitous Language & Domain Context (`docs/context.md`)**: Prevents LLM synonym hallucination and naming drift (`customer` vs `client`, `item` vs `product`) by enforcing canonical entities, lifecycle states, and forbidden synonym tables across Implementer and Reviewer.
 - **Architecture Decision Records (ADRs in `docs/adr/`)**: Structural architectural decisions are recorded in lightweight ADRs (`docs/adr/0001-<slug>.md`). Subsequent agents are strictly prohibited from undoing or violating accepted ADRs without explicit justification.
+- **Autonomous Skill Gate (NVIDIA SkillSpector)**: Before activating or ingesting any agent skill (`SKILL.md`, `.agents/skills/`) or MCP tool, the harness autonomously executes NVIDIA SkillSpector (`uvx ... skillspector scan --no-llm`). Intercepts prompt injections, excessive agency, dynamic execution taint, and exfiltration attempts in background with zero human micromanagement.
 - **Autonomous Multi-Agent Guardrails**: Once initialized, your agents talk to each other to plan, build, sanitize, and audit every change:
   - **Sanitization Guardrail (`reviewer.md`)**: Re-reads all code adversarially, runs test suites independently, strips console logs/debug prints, and enforces architecture conventions, ADRs, and ubiquitous language.
-  - **Cybersecurity & Anti-Exfiltration Guardrail (`security-reviewer.md`)**: Scans every line for hardcoded API keys/tokens, blocks unauthorized network egress, stops prompt injections, and validates supply chain dependencies.
+  - **Cybersecurity & Anti-Exfiltration Guardrail (`security-reviewer.md`)**: Scans every line for hardcoded API keys/tokens, blocks unauthorized network egress, stops prompt injections, and validates supply chain dependencies and skills.
 - **Zero Micromanagement**: You don't edit JSON files, task backlogs, or markdown templates. You simply tell your AI in chat what you want to build; the **Leader** agent decomposes tasks and coordinates the guardrails.
 - **Tool Agnostic**: Works natively with **Antigravity**, **Cursor**, **GitHub Copilot**, **Windsurf**, and **Claude Code**.
-- **Automated Git Safety Gate**: A pre-commit hook automatically blocks any attempt to commit secrets or unredacted credentials to git.
+- **Automated Git Safety Gate**: A pre-commit hook automatically blocks any attempt to commit secrets or unredacted credentials to git, and runs SkillSpector on any staged skills.
 
 ---
 
@@ -162,6 +163,16 @@ This harness implements a defense-in-depth model specifically designed for auton
 | **Offline Test Isolation** | Test suites must run cleanly without live internet access, eliminating test-time telemetry or socket exfiltration. |
 | **Canary Tokens Trap** | Ships with `.env.example` containing a decoy Canary Token to instantly detect unauthorized token exfiltration. |
 
+### Autonomous Skill Gate (NVIDIA SkillSpector)
+
+Agent skills, prompt workflows, and Model Context Protocol (MCP) tool definitions are audited automatically without human micromanagement:
+- **Pre-Activation Screening**: Before any agent reads or executes instructions from a skill (`SKILL.md`, `.agents/skills/`), it runs a deterministic static AST and pattern scan:
+  ```bash
+  uvx --from git+https://github.com/NVIDIA/skillspector.git skillspector scan <path-to-skill> --format json --no-llm
+  ```
+- **Zero-Tolerance Veto**: Any CRITICAL or HIGH finding (instruction overrides, prompt injections, unauthorized egress, or `eval`/`exec` taint) triggers immediate rejection and halts skill ingestion.
+- **Git Pre-Commit Enforcer**: `init.sh` deploys a pre-commit hook that intercepts any staged skill files and blocks git commits that fail SkillSpector analysis.
+
 ---
 
 ## 4. Tool Auto-Recognition
@@ -205,7 +216,8 @@ Every tool reads from `AGENTS.md` and `agents/` automatically:
 ├── docs/                             # Progressive disclosure guides
 │   ├── context.md                    # Domain glossary, canonical entities & anti-synonyms
 │   ├── adr/                          # Architecture Decision Records
-│   │   └── template.md               # Lightweight ADR template
+│   │   ├── template.md               # Lightweight ADR template
+│   │   └── 0001-skillspector-autonomous-skill-gate.md # SkillSpector gate ADR
 │   ├── architecture.md               # Architectural layers and prohibited patterns
 │   ├── conventions.md                # Language style & testing standards
 │   ├── security.md                   # Extreme security policy & egress whitelist
