@@ -38,28 +38,41 @@ dir_exists() { [ -d "$1" ]; }
 FORCE_CLEAN=false
 FORCE_KEEP=false
 IS_UPDATE_MODE=false
+HARNESS_PROFILE=""
 
-for arg in "$@"; do
-    case "$arg" in
-        --clean-git) FORCE_CLEAN=true ;;
-        --keep-git) FORCE_KEEP=true ;;
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --clean-git) FORCE_CLEAN=true; shift ;;
+        --keep-git) FORCE_KEEP=true; shift ;;
         --update)
             IS_UPDATE_MODE=true
             FORCE_KEEP=true
+            shift
+            ;;
+        --profile|-p)
+            HARNESS_PROFILE="$2"
+            shift 2
+            ;;
+        --profile=*)
+            HARNESS_PROFILE="${1#*=}"
+            shift
             ;;
         --help|-h)
             echo -e "${BOLD}Agent Harness — Setup & Environment Verification${NC}"
             echo ""
             echo "Usage:"
-            echo "  ./init.sh                     Smart setup (prompts if repo exists; runs clean if new)"
-            echo "  /path/to/agent-harness/init.sh  Run remotely from any project"
-            echo "  /path/to/agent-harness/init.sh --update  Update existing project to latest harness safely"
-            echo "  ./update.sh <project-dir>     Fast project updater (or run /path/to/agent-harness/update.sh inside project)"
-            echo "  ./init.sh --clean-git         Force clean slate (reset Git from zero)"
-            echo "  ./init.sh --keep-git          Force preserve existing Git repository"
-            echo "  ./init.sh --help              Show this screen"
+            echo "  ./init.sh                               Smart setup (prompts profile & git options)"
+            echo "  ./init.sh --profile <name>              Choose profile: balanced, lite, security, full"
+            echo "  /path/to/agent-harness/init.sh          Run remotely from any project"
+            echo "  /path/to/agent-harness/init.sh --update Update existing project safely"
+            echo "  ./init.sh --clean-git                   Force clean slate (reset Git from zero)"
+            echo "  ./init.sh --keep-git                    Force preserve existing Git repository"
+            echo "  ./init.sh --help                        Show this screen"
             echo ""
             exit 0
+            ;;
+        *)
+            shift
             ;;
     esac
 done
@@ -74,10 +87,40 @@ if [ "$SCRIPT_DIR" != "$CURRENT_DIR" ]; then
     IS_EXTERNAL_RUN=true
 fi
 
+# ── Profile Selection & Normalization ──────────────────────
+if [ -z "$HARNESS_PROFILE" ]; then
+    if [ "$IS_UPDATE_MODE" = false ] && [ -t 0 ]; then
+        echo ""
+        echo -e "${YELLOW}▸ Selecciona el perfil del Harness:${NC}"
+        echo -e "  1) ${BOLD}Balanced${NC} [Default] — Rápido, bajo consumo (~460 tks), self-review + tests + local security hook"
+        echo -e "  2) ${BOLD}Lite${NC} — Ultra-liviano (~380 tks), 1 agente, ideal para forks, scripts y MVPs"
+        echo -e "  3) ${BOLD}Security${NC} — Blindaje perimetral (~480 tks), zero-trust, auditoría de seguridad dedicada"
+        echo -e "  4) ${BOLD}Full${NC} — Pipeline autónomo completo (4 agentes, ADRs, context, checkpoints exhaustivos)"
+        echo -ne "${BOLD}  Opción [1-4, default: 1]: ${NC}"
+        read -r P_CHOICE
+        case "$P_CHOICE" in
+            2|lite|Lite) HARNESS_PROFILE="lite" ;;
+            3|security|Security) HARNESS_PROFILE="security" ;;
+            4|full|Full) HARNESS_PROFILE="full" ;;
+            *) HARNESS_PROFILE="balanced" ;;
+        esac
+    else
+        HARNESS_PROFILE="balanced"
+    fi
+else
+    case "$HARNESS_PROFILE" in
+        lite|Lite|2) HARNESS_PROFILE="lite" ;;
+        security|Security|3) HARNESS_PROFILE="security" ;;
+        full|Full|4) HARNESS_PROFILE="full" ;;
+        *) HARNESS_PROFILE="balanced" ;;
+    esac
+fi
+
 echo ""
 echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
 echo -e "${BOLD}  Agent Harness — Setup & Environment Verification       ${NC}"
 echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
+echo -e "  Profile: ${BOLD}${HARNESS_PROFILE}${NC}"
 echo ""
 
 # ── 0. Remote Deployment Mode (if executed from external dir) ──
@@ -85,6 +128,7 @@ if [ "$IS_EXTERNAL_RUN" = true ]; then
     echo -e "${BLUE}▸ Remote deployment mode detected.${NC}"
     echo -e "  Template Source : ${BOLD}${SCRIPT_DIR}${NC}"
     echo -e "  Target Project  : ${BOLD}${CURRENT_DIR}${NC}"
+    echo -e "  Harness Profile : ${BOLD}${HARNESS_PROFILE}${NC}"
     echo ""
     if [ "$IS_UPDATE_MODE" = true ]; then
         echo -e "${BLUE}▸ Updating Agent Harness in target project (--update)...${NC}"
@@ -92,39 +136,77 @@ if [ "$IS_EXTERNAL_RUN" = true ]; then
         echo -e "${BLUE}▸ Deploying Agent Harness into target project...${NC}"
     fi
 
-    # 1. Agent roles (always update to latest harness standards)
-    if [ -d "$SCRIPT_DIR/agents" ]; then
-        mkdir -p "$CURRENT_DIR/agents"
-        cp -R "$SCRIPT_DIR/agents/." "$CURRENT_DIR/agents/" 2>/dev/null || true
-        echo -e "  ${GREEN}✓${NC} Deployed agents/ (latest role definitions)"
+    # 1. Profile-specific AGENTS.md
+    if [ -f "$SCRIPT_DIR/profiles/$HARNESS_PROFILE/AGENTS.md" ]; then
+        cp "$SCRIPT_DIR/profiles/$HARNESS_PROFILE/AGENTS.md" "$CURRENT_DIR/AGENTS.md"
+        echo -e "  ${GREEN}✓${NC} Deployed AGENTS.md (${HARNESS_PROFILE} profile)"
+    elif [ -f "$SCRIPT_DIR/AGENTS.md" ]; then
+        cp "$SCRIPT_DIR/AGENTS.md" "$CURRENT_DIR/AGENTS.md"
+        echo -e "  ${GREEN}✓${NC} Deployed AGENTS.md"
     fi
 
-    # 2. Docs directory (deploy ADR template and context; preserve existing project-specific architecture)
-    if [ -d "$SCRIPT_DIR/docs" ]; then
-        mkdir -p "$CURRENT_DIR/docs/adr"
-        cp "$SCRIPT_DIR/docs/adr/template.md" "$CURRENT_DIR/docs/adr/" 2>/dev/null || true
-        for doc in "$SCRIPT_DIR/docs"/*; do
-            docname="$(basename "$doc")"
-            if [ "$docname" != "adr" ]; then
-                if [ ! -f "$CURRENT_DIR/docs/$docname" ]; then
-                    cp "$doc" "$CURRENT_DIR/docs/$docname" 2>/dev/null || true
-                    echo -e "  ${GREEN}✓${NC} Deployed docs/$docname"
-                fi
+    # 2. Agent roles (only for security and full profiles)
+    if [ "$HARNESS_PROFILE" = "full" ]; then
+        if [ -d "$SCRIPT_DIR/agents" ]; then
+            mkdir -p "$CURRENT_DIR/agents"
+            cp -R "$SCRIPT_DIR/agents/." "$CURRENT_DIR/agents/" 2>/dev/null || true
+            echo -e "  ${GREEN}✓${NC} Deployed agents/ (all 4 orchestrator roles)"
+        fi
+    elif [ "$HARNESS_PROFILE" = "security" ]; then
+        mkdir -p "$CURRENT_DIR/agents"
+        for ag in implementer.md security-reviewer.md; do
+            if [ -f "$SCRIPT_DIR/agents/$ag" ]; then
+                cp "$SCRIPT_DIR/agents/$ag" "$CURRENT_DIR/agents/$ag" 2>/dev/null || true
             fi
         done
-        echo -e "  ${GREEN}✓${NC} Deployed docs/ (preserved project architecture & conventions)"
+        echo -e "  ${GREEN}✓${NC} Deployed agents/ (implementer + security-reviewer)"
     fi
 
-    # 3. Progress directory (never clobber existing active task or history)
-    mkdir -p "$CURRENT_DIR/progress"
-    for prog in current.md history.md; do
-        if [ ! -f "$CURRENT_DIR/progress/$prog" ] && [ -f "$SCRIPT_DIR/progress/$prog" ]; then
-            cp "$SCRIPT_DIR/progress/$prog" "$CURRENT_DIR/progress/$prog" 2>/dev/null || true
+    # 3. Docs directory (profile-dependent)
+    if [ "$HARNESS_PROFILE" = "full" ]; then
+        if [ -d "$SCRIPT_DIR/docs" ]; then
+            mkdir -p "$CURRENT_DIR/docs/adr"
+            cp "$SCRIPT_DIR/docs/adr/template.md" "$CURRENT_DIR/docs/adr/" 2>/dev/null || true
+            for doc in "$SCRIPT_DIR/docs"/*; do
+                docname="$(basename "$doc")"
+                if [ "$docname" != "adr" ]; then
+                    if [ ! -f "$CURRENT_DIR/docs/$docname" ]; then
+                        cp "$doc" "$CURRENT_DIR/docs/$docname" 2>/dev/null || true
+                    fi
+                fi
+            done
+            echo -e "  ${GREEN}✓${NC} Deployed docs/ (full architecture, conventions, security, verification, context & ADRs)"
         fi
-    done
-    echo -e "  ${GREEN}✓${NC} Preserved progress/ (active task & history safe)"
+    elif [ "$HARNESS_PROFILE" = "security" ]; then
+        mkdir -p "$CURRENT_DIR/docs"
+        for doc in architecture.md conventions.md security.md; do
+            if [ -f "$SCRIPT_DIR/docs/$doc" ] && [ ! -f "$CURRENT_DIR/docs/$doc" ]; then
+                cp "$SCRIPT_DIR/docs/$doc" "$CURRENT_DIR/docs/$doc" 2>/dev/null || true
+            fi
+        done
+        echo -e "  ${GREEN}✓${NC} Deployed docs/ (architecture, conventions, security)"
+    elif [ "$HARNESS_PROFILE" = "balanced" ]; then
+        mkdir -p "$CURRENT_DIR/docs"
+        for doc in architecture.md conventions.md; do
+            if [ -f "$SCRIPT_DIR/docs/$doc" ] && [ ! -f "$CURRENT_DIR/docs/$doc" ]; then
+                cp "$SCRIPT_DIR/docs/$doc" "$CURRENT_DIR/docs/$doc" 2>/dev/null || true
+            fi
+        done
+        echo -e "  ${GREEN}✓${NC} Deployed docs/ (architecture, conventions)"
+    fi
 
-    # 4. Tool config directories
+    # 4. Progress directory (only if not lite)
+    if [ "$HARNESS_PROFILE" != "lite" ]; then
+        mkdir -p "$CURRENT_DIR/progress"
+        for prog in current.md history.md; do
+            if [ ! -f "$CURRENT_DIR/progress/$prog" ] && [ -f "$SCRIPT_DIR/progress/$prog" ]; then
+                cp "$SCRIPT_DIR/progress/$prog" "$CURRENT_DIR/progress/$prog" 2>/dev/null || true
+            fi
+        done
+        echo -e "  ${GREEN}✓${NC} Preserved progress/ (active task & history safe)"
+    fi
+
+    # 5. Tool config directories (always deployed)
     if [ -d "$SCRIPT_DIR/.github" ]; then
         mkdir -p "$CURRENT_DIR/.github"
         if [ ! -f "$CURRENT_DIR/.github/copilot-instructions.md" ] || [ "$IS_UPDATE_MODE" = true ]; then
@@ -141,8 +223,8 @@ if [ "$IS_EXTERNAL_RUN" = true ]; then
         fi
     fi
 
-    # 5. Core files (in update mode, refresh AGENTS.md, CHECKPOINTS.md, SETUP.md and adapters; NEVER overwrite TASKS.md)
-    for file in AGENTS.md CHECKPOINTS.md SETUP.md CLAUDE.md .cursorrules .windsurfrules; do
+    # 6. Universal adapters (always deployed)
+    for file in CLAUDE.md .cursorrules .windsurfrules; do
         if [ -f "$SCRIPT_DIR/$file" ]; then
             if [ ! -f "$CURRENT_DIR/$file" ] || [ "$IS_UPDATE_MODE" = true ]; then
                 cp "$SCRIPT_DIR/$file" "$CURRENT_DIR/$file"
@@ -151,13 +233,29 @@ if [ "$IS_EXTERNAL_RUN" = true ]; then
         fi
     done
 
-    # TASKS.md and .env.example (NEVER overwritten in update mode)
-    for file in TASKS.md .env.example; do
-        if [ -f "$SCRIPT_DIR/$file" ] && [ ! -f "$CURRENT_DIR/$file" ]; then
-            cp "$SCRIPT_DIR/$file" "$CURRENT_DIR/$file"
-            echo -e "  ${GREEN}✓${NC} Deployed $file"
+    # 7. Additional docs (CHECKPOINTS.md, SETUP.md, TASKS.md)
+    if [ "$HARNESS_PROFILE" = "full" ]; then
+        for file in CHECKPOINTS.md SETUP.md; do
+            if [ -f "$SCRIPT_DIR/$file" ]; then
+                if [ ! -f "$CURRENT_DIR/$file" ] || [ "$IS_UPDATE_MODE" = true ]; then
+                    cp "$SCRIPT_DIR/$file" "$CURRENT_DIR/$file"
+                    echo -e "  ${GREEN}✓${NC} Deployed $file"
+                fi
+            fi
+        done
+    fi
+
+    if [ "$HARNESS_PROFILE" != "lite" ]; then
+        if [ -f "$SCRIPT_DIR/TASKS.md" ] && [ ! -f "$CURRENT_DIR/TASKS.md" ]; then
+            cp "$SCRIPT_DIR/TASKS.md" "$CURRENT_DIR/TASKS.md"
+            echo -e "  ${GREEN}✓${NC} Deployed TASKS.md"
         fi
-    done
+    fi
+
+    if [ -f "$SCRIPT_DIR/.env.example" ] && [ ! -f "$CURRENT_DIR/.env.example" ]; then
+        cp "$SCRIPT_DIR/.env.example" "$CURRENT_DIR/.env.example"
+        echo -e "  ${GREEN}✓${NC} Deployed .env.example (canary token)"
+    fi
 
     # .gitignore handling
     if [ ! -f "$CURRENT_DIR/.gitignore" ]; then
@@ -231,10 +329,19 @@ else
     CREATE_BASELINE_COMMIT=true
 fi
 
+# Configure profile-specific AGENTS.md for local runs
+if [ "$IS_EXTERNAL_RUN" = false ] && [ "$IS_TEMPLATE_REPO" = false ]; then
+    if [ -f "$SCRIPT_DIR/profiles/$HARNESS_PROFILE/AGENTS.md" ]; then
+        cp "$SCRIPT_DIR/profiles/$HARNESS_PROFILE/AGENTS.md" "$CURRENT_DIR/AGENTS.md"
+        echo -e "  ${GREEN}✓${NC} Configured AGENTS.md for profile: ${BOLD}${HARNESS_PROFILE}${NC}"
+    fi
+fi
+
 # ── 2. Progress Files Initialization ────────────────────
-if [ ! -f "progress/current.md" ] || [ "$CREATE_BASELINE_COMMIT" = true ]; then
-    mkdir -p progress
-    cat << 'EOF' > progress/current.md
+if [ "$HARNESS_PROFILE" != "lite" ]; then
+    if [ ! -f "progress/current.md" ] || [ "$CREATE_BASELINE_COMMIT" = true ]; then
+        mkdir -p progress
+        cat << 'EOF' > progress/current.md
 # Active Session
 
 ## Task
@@ -251,12 +358,12 @@ Tell your AI what you want to build. The Leader will break it down into TASKS.md
 ## Next Step
 Awaiting user request.
 EOF
-    echo -e "  ${GREEN}✓${NC} Ready progress/current.md"
-fi
+        echo -e "  ${GREEN}✓${NC} Ready progress/current.md"
+    fi
 
-if [ ! -f "progress/history.md" ] || [ "$CREATE_BASELINE_COMMIT" = true ]; then
-    mkdir -p progress
-    cat << 'EOF' > progress/history.md
+    if [ ! -f "progress/history.md" ] || [ "$CREATE_BASELINE_COMMIT" = true ]; then
+        mkdir -p progress
+        cat << 'EOF' > progress/history.md
 # Session History
 
 > Append-only audit log of completed agent tasks.
@@ -264,7 +371,8 @@ if [ ! -f "progress/history.md" ] || [ "$CREATE_BASELINE_COMMIT" = true ]; then
 ---
 
 EOF
-    echo -e "  ${GREEN}✓${NC} Ready progress/history.md"
+        echo -e "  ${GREEN}✓${NC} Ready progress/history.md"
+    fi
 fi
 
 # ── 3. Install or Merge Pre-Commit Safety Hook ──────────
@@ -523,28 +631,10 @@ if [ "$DEV_DETECTED" = false ]; then
 fi
 
 echo ""
-echo -e "${BOLD}▸ Validating Harness Integrity...${NC}"
+echo -e "${BOLD}▸ Validating Harness Integrity (${HARNESS_PROFILE} profile)...${NC}"
 
-# Core files
+# Core Universal Adapters & Files (all profiles)
 check "AGENTS.md exists" file_exists "AGENTS.md"
-check "TASKS.md exists" file_exists "TASKS.md"
-check "CHECKPOINTS.md exists" file_exists "CHECKPOINTS.md"
-check "progress/current.md exists" file_exists "progress/current.md"
-check "progress/history.md exists" file_exists "progress/history.md"
-check "docs/context.md exists" file_exists "docs/context.md"
-check "docs/adr/template.md exists" file_exists "docs/adr/template.md"
-check "docs/architecture.md exists" file_exists "docs/architecture.md"
-check "docs/conventions.md exists" file_exists "docs/conventions.md"
-check "docs/security.md exists" file_exists "docs/security.md"
-check "docs/verification.md exists" file_exists "docs/verification.md"
-
-# Agents
-check "agents/leader.md exists" file_exists "agents/leader.md"
-check "agents/implementer.md exists" file_exists "agents/implementer.md"
-check "agents/reviewer.md exists" file_exists "agents/reviewer.md"
-check "agents/security-reviewer.md exists" file_exists "agents/security-reviewer.md"
-
-# Universal Tool Adapters
 check ".cursorrules exists (Cursor)" file_exists ".cursorrules"
 check ".windsurfrules exists (Windsurf)" file_exists ".windsurfrules"
 check ".github/copilot-instructions.md exists (GitHub Copilot)" file_exists ".github/copilot-instructions.md"
@@ -552,6 +642,29 @@ check "CLAUDE.md exists (Claude Code)" file_exists "CLAUDE.md"
 check ".gitignore exists" file_exists ".gitignore"
 check ".env.example exists (canary token)" file_exists ".env.example"
 check ".claude/settings.json exists (Claude Code permissions)" file_exists ".claude/settings.json"
+
+if [ "$HARNESS_PROFILE" != "lite" ]; then
+    check "TASKS.md exists" file_exists "TASKS.md"
+    check "progress/current.md exists" file_exists "progress/current.md"
+    check "progress/history.md exists" file_exists "progress/history.md"
+    check "docs/architecture.md exists" file_exists "docs/architecture.md"
+    check "docs/conventions.md exists" file_exists "docs/conventions.md"
+fi
+
+if [ "$HARNESS_PROFILE" = "security" ] || [ "$HARNESS_PROFILE" = "full" ]; then
+    check "docs/security.md exists" file_exists "docs/security.md"
+    check "agents/implementer.md exists" file_exists "agents/implementer.md"
+    check "agents/security-reviewer.md exists" file_exists "agents/security-reviewer.md"
+fi
+
+if [ "$HARNESS_PROFILE" = "full" ]; then
+    check "CHECKPOINTS.md exists" file_exists "CHECKPOINTS.md"
+    check "docs/context.md exists" file_exists "docs/context.md"
+    check "docs/adr/template.md exists" file_exists "docs/adr/template.md"
+    check "docs/verification.md exists" file_exists "docs/verification.md"
+    check "agents/leader.md exists" file_exists "agents/leader.md"
+    check "agents/reviewer.md exists" file_exists "agents/reviewer.md"
+fi
 
 # SkillSpector Autonomous Gate Readiness
 if command -v uvx > /dev/null 2>&1 || command -v skillspector > /dev/null 2>&1; then

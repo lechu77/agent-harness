@@ -51,6 +51,26 @@ cd mi-proyecto
   - **Opción 1** (Enter): Mantiene tus ramas, historial y remotes 100% intactos (ideal para tus proyectos existentes como `ShadowerNinja`).
   - **Opción 2**: Plancha el Git ajeno y te inicializa un Git 0km en `main` con commit baseline (ideal cuando te clonás un repo ajeno como base para un proyecto propio).
 
+### Perfiles de Consumo de Tokens (Profiles)
+Para que el harness no te genere costos excesivos en proyectos cortos, forks o scripts rápidos, `init.sh` te permite elegir el **peso en tokens** del harness:
+
+| Perfil | Overhead de Contexto | Pipeline | Cuándo usarlo |
+|---|---|---|---|
+| **`balanced`** (Default) | **~460 tokens** (Bajo) | Implementer + Self-Review + Tests | Proyectos estándar from-scratch, features del día a día. |
+| **`lite`** | **~380 tokens** (Mínimo) | 1 Agente directo + Tests | Forks puntuales, scripts rápidos, fixes de 1 archivo, MVPs. |
+| **`security`** | **~480 tokens** (Medio) | Implementer → Security Reviewer | Proyectos con APIs externas, auth sensible, pagos, PII. |
+| **`full`** | **~2.478 tokens** (Completo) | Leader → Impl → Reviewer → SecReviewer | Sistemas grandes, multi-módulo, ADRs y checkpoints exhaustivos. |
+
+> **Nota de costo:** El pre-commit hook de Git (detección de tokens, AWS, OpenAI, GitHub PATs) se instala en **todos los perfiles** porque corre en Bash local y cuesta **$0 tokens**.
+
+Podés seleccionarlo interactivamente o pasar la flag directa:
+```bash
+../agent-harness/init.sh --profile lite
+../agent-harness/init.sh --profile balanced
+../agent-harness/init.sh --profile security
+../agent-harness/init.sh --profile full
+```
+
 ### Smart Zero-Copy & Self-Deletion
 - **Zero-Copy**: Al correrlo remotamente (`../agent-harness/init.sh`), despliega todos los archivos, guardrails y adaptadores sin que tengas que copiar nada a mano.
 - **Protección de la plantilla maestra**: El `init.sh` original de `agent-harness` **nunca se borra**. Solo ofrece eliminar la copia local del proyecto destino.
