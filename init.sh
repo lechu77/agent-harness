@@ -91,12 +91,12 @@ fi
 if [ -z "$HARNESS_PROFILE" ]; then
     if [ "$IS_UPDATE_MODE" = false ] && [ -t 0 ]; then
         echo ""
-        echo -e "${YELLOW}▸ Selecciona el perfil del Harness:${NC}"
-        echo -e "  1) ${BOLD}Balanced${NC} [Default] — Rápido, bajo consumo (~460 tks), self-review + tests + local security hook"
-        echo -e "  2) ${BOLD}Lite${NC} — Ultra-liviano (~380 tks), 1 agente, ideal para forks, scripts y MVPs"
-        echo -e "  3) ${BOLD}Security${NC} — Blindaje perimetral (~480 tks), zero-trust, auditoría de seguridad dedicada"
-        echo -e "  4) ${BOLD}Full${NC} — Pipeline autónomo completo (4 agentes, ADRs, context, checkpoints exhaustivos)"
-        echo -ne "${BOLD}  Opción [1-4, default: 1]: ${NC}"
+        echo -e "${YELLOW}▸ Select Harness Profile:${NC}"
+        echo -e "  1) ${BOLD}Balanced${NC} [Default] — Fast, low token footprint (~460 tks), self-review + tests + local security hook"
+        echo -e "  2) ${BOLD}Lite${NC} — Ultra-lightweight (~380 tks), 1 direct agent, ideal for forks, scripts & MVPs"
+        echo -e "  3) ${BOLD}Security${NC} — Hardened perimeter (~480 tks), zero-trust, dedicated security reviewer"
+        echo -e "  4) ${BOLD}Full${NC} — Full autonomous pipeline (4 agents, ADRs, context, exhaustive checkpoints)"
+        echo -ne "${BOLD}  Option [1-4, default: 1]: ${NC}"
         read -r P_CHOICE
         case "$P_CHOICE" in
             2|lite|Lite) HARNESS_PROFILE="lite" ;;
@@ -295,37 +295,37 @@ CREATE_BASELINE_COMMIT=false
 
 if [ -d ".git" ]; then
     if [ "$FORCE_CLEAN" = true ]; then
-        echo -e "${BLUE}▸ Planchando repositorio Git (--clean-git)...${NC}"
+        echo -e "${BLUE}▸ Resetting Git repository (--clean-git)...${NC}"
         rm -rf .git
         git init -b main > /dev/null 2>&1 || git init > /dev/null 2>&1
-        echo -e "  ${GREEN}✓${NC} Repositorio Git inicializado de cero (branch: main)"
+        echo -e "  ${GREEN}✓${NC} Git repository initialized from scratch (branch: main)"
         CREATE_BASELINE_COMMIT=true
     elif [ "$FORCE_KEEP" = true ]; then
-        echo -e "  ${GREEN}✓${NC} Repositorio Git conservado intacto (--keep-git)"
+        echo -e "  ${GREEN}✓${NC} Git repository preserved intact (--keep-git)"
     elif [ -t 0 ]; then
-        echo -e "${YELLOW}▸ Repositorio Git existente detectado${NC}${REMOTE_URL:+ ($REMOTE_URL)}."
-        echo -e "  ¿Qué querés hacer con el repositorio Git?"
-        echo -e "    1) Mantener el repo actual intacto (conservar historial y remotes) [default]"
-        echo -e "    2) Planchar todo y empezar de cero (Clean slate: nuevo repo 0km)"
-        echo -ne "${BOLD}  Opción [1/2, default: 1]: ${NC}"
+        echo -e "${YELLOW}▸ Existing Git repository detected${NC}${REMOTE_URL:+ ($REMOTE_URL)}."
+        echo -e "  What would you like to do with the Git repository?"
+        echo -e "    1) Keep existing repository intact (preserve history & remotes) [default]"
+        echo -e "    2) Clean slate: reset everything and start fresh (new repository 0km)"
+        echo -ne "${BOLD}  Option [1/2, default: 1]: ${NC}"
         read -r GIT_CHOICE
         if [[ "$GIT_CHOICE" == "2" ]]; then
-            echo -e "${BLUE}▸ Planchando repositorio Git...${NC}"
+            echo -e "${BLUE}▸ Resetting Git repository...${NC}"
             rm -rf .git
             git init -b main > /dev/null 2>&1 || git init > /dev/null 2>&1
-            echo -e "  ${GREEN}✓${NC} Repositorio Git inicializado de cero (branch: main)"
+            echo -e "  ${GREEN}✓${NC} Git repository initialized from scratch (branch: main)"
             CREATE_BASELINE_COMMIT=true
         else
-            echo -e "  ${GREEN}✓${NC} Repositorio Git conservado 100% intacto"
+            echo -e "  ${GREEN}✓${NC} Git repository preserved 100% intact"
         fi
     else
         # Non-interactive mode (pipes/CI) -> safe default: preserve
-        echo -e "  ${GREEN}✓${NC} Repositorio Git existente detectado (${REMOTE_URL:-local git repo}) — conservado intacto"
+        echo -e "  ${GREEN}✓${NC} Existing Git repository detected (${REMOTE_URL:-local git repo}) — preserved intact"
     fi
 else
-    # No hay repo: nada, sigue de largo!
+    # No repo: initialize new
     git init -b main > /dev/null 2>&1 || git init > /dev/null 2>&1
-    echo -e "  ${GREEN}✓${NC} Repositorio Git inicializado de cero (branch: main)"
+    echo -e "  ${GREEN}✓${NC} Git repository initialized from scratch (branch: main)"
     CREATE_BASELINE_COMMIT=true
 fi
 

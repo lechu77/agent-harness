@@ -12,7 +12,7 @@ Set it up **once**, and let your agents handle planning, coding, quality double-
 ## The Philosophy: Fire & Forget + Autonomous Guardrails
 
 - **Run `init.sh` ONCE (Fire & Forget)**: Execute `./init.sh` only when bootstrapping a new project. You can even let it delete itself upon completion. Neither you nor the agents ever run it again.
-- **Zero-Fluff & Action-First Communication**: Inspired by cognitive ease and `ayghri/i-have-adhd`, eliminates LLM verbiage, conversational filler, and throat-clearing preambles (*"¡Gran pregunta!", "Claro, con gusto..."*). The first line is always an immediate action, command, path, or direct result. Completed tasks deliver concrete visible wins (quick 30-second verification), bounded atomic steps, and lists capped at 5 items.
+- **Zero-Fluff & Action-First Communication**: Inspired by cognitive ease and `ayghri/i-have-adhd`, eliminates LLM verbiage, conversational filler, and throat-clearing preambles (*"Great question!", "Sure thing, I'd be glad to help..."*). The first line is always an immediate action, command, path, or direct result. Completed tasks deliver concrete visible wins (quick 30-second verification), bounded atomic steps, and lists capped at 5 items.
 - **Preventive Grilling Protocol (Ambiguity & Bifurcation Gate)**: Inspired by Matt Pocock's prompt-interview techniques, the Leader pauses to ask 2–3 structured questions *only* when detecting critical architectural forks (e.g. Cookies vs JWT, SQL vs NoSQL) or destructive ambiguity. Routine or clear tasks bypass this check and proceed 100% autonomously.
 - **Ubiquitous Language & Domain Context (`docs/context.md`)**: Prevents LLM synonym hallucination and naming drift (`customer` vs `client`, `item` vs `product`) by enforcing canonical entities, lifecycle states, and forbidden synonym tables across Implementer and Reviewer.
 - **Architecture Decision Records (ADRs in `docs/adr/`)**: Structural architectural decisions are recorded in lightweight ADRs (`docs/adr/0001-<slug>.md`). Subsequent agents are strictly prohibited from undoing or violating accepted ADRs without explicit justification.
@@ -26,44 +26,44 @@ Set it up **once**, and let your agents handle planning, coding, quality double-
 
 ---
 
-## 1. Quick Start: Solo ejecutás `init.sh` a secas
-
-No necesitás pasarle argumentos ni nombres de proyecto. Solo ejecutás `init.sh`:
-
-### En cualquier proyecto (nuevo, existente o clonado de un tercero):
+## 1. Quick Start: Simply run `init.sh`
+ 
+No arguments or project names needed. Just execute `init.sh`:
+ 
+### In any project (new, existing, or cloned from a third party):
 ```bash
-cd mi-proyecto
+cd my-project
 
-# Ejecutás el init de tu harness remotamente (o ./init.sh si lo copiaste):
+# Run the harness init remotely (or ./init.sh if copied):
 ../agent-harness/init.sh
 ```
 
-**¿Qué pasa al ejecutarlo?**
-- **Si NO detecta Git**: Inicializa Git automáticamente (`main`), crea el commit baseline inicial y **sigue de largo sin preguntar nada**.
-- **Si detecta un Git existente**: Te muestra un prompt simple y directo:
+**What happens upon execution?**
+- **If NO Git repository is detected**: Automatically initializes Git (branch `main`), creates the baseline initial commit, and **proceeds without prompts**.
+- **If an existing Git repository is detected**: Displays a clear, simple prompt:
   ```text
-  ▸ Repositorio Git existente detectado.
-    ¿Qué querés hacer con el repositorio Git?
-      1) Mantener el repo actual intacto (conservar historial y remotes) [default]
-      2) Planchar todo y empezar de cero (Clean slate: nuevo repo 0km)
-    Opción [1/2, default: 1]:
+  ▸ Existing Git repository detected.
+    What would you like to do with the Git repository?
+      1) Keep existing repository intact (preserve history & remotes) [default]
+      2) Clean slate: reset everything and start fresh (new repository 0km)
+    Option [1/2, default: 1]:
   ```
-  - **Opción 1** (Enter): Mantiene tus ramas, historial y remotes 100% intactos (ideal para tus proyectos existentes como `ShadowerNinja`).
-  - **Opción 2**: Plancha el Git ajeno y te inicializa un Git 0km en `main` con commit baseline (ideal cuando te clonás un repo ajeno como base para un proyecto propio).
+  - **Option 1** (Enter): Keeps your branches, commit history, and remotes 100% intact (ideal for existing projects).
+  - **Option 2**: Resets any upstream git history and starts a fresh Git repository on `main` with an initial baseline commit (ideal when cloning a starter template as your project's foundation).
 
-### Perfiles de Consumo de Tokens (Profiles)
-Para que el harness no te genere costos excesivos en proyectos cortos, forks o scripts rápidos, `init.sh` te permite elegir el **peso en tokens** del harness:
+### Token Consumption Profiles
+To prevent excessive token consumption on short tasks, bugfixes, or quick forks, `init.sh` lets you select the **context footprint** of the harness:
 
-| Perfil | Overhead de Contexto | Pipeline | Cuándo usarlo |
+| Profile | Context Footprint | Active Pipeline | Recommended Use Case |
 |---|---|---|---|
-| **`balanced`** (Default) | **~460 tokens** (Bajo) | Implementer + Self-Review + Tests | Proyectos estándar from-scratch, features del día a día. |
-| **`lite`** | **~380 tokens** (Mínimo) | 1 Agente directo + Tests | Forks puntuales, scripts rápidos, fixes de 1 archivo, MVPs. |
-| **`security`** | **~480 tokens** (Medio) | Implementer → Security Reviewer | Proyectos con APIs externas, auth sensible, pagos, PII. |
-| **`full`** | **~2.478 tokens** (Completo) | Leader → Impl → Reviewer → SecReviewer | Sistemas grandes, multi-módulo, ADRs y checkpoints exhaustivos. |
+| **`balanced`** (Default) | **~460 tokens** (Low) | Implementer + Self-Review + Tests | Standard from-scratch projects, day-to-day features. |
+| **`lite`** | **~380 tokens** (Minimal) | 1 Direct Agent + Tests | Targeted forks, quick scripts, 1-file fixes, MVPs. |
+| **`security`** | **~480 tokens** (Medium) | Implementer → Security Reviewer | Projects with external APIs, sensitive auth, payments, PII. |
+| **`full`** | **~2,478 tokens** (Full) | Leader → Impl → Reviewer → SecReviewer | Large multi-module architectures, formal ADRs & exhaustive checkpoints. |
 
-> **Nota de costo:** El pre-commit hook de Git (detección de tokens, AWS, OpenAI, GitHub PATs) se instala en **todos los perfiles** porque corre en Bash local y cuesta **$0 tokens**.
+> **Zero-Cost Security Gate**: The local Git pre-commit hook (detecting leaked keys, AWS, OpenAI, GitHub PATs) is installed across **all profiles** because it executes in local Bash regex at **$0 tokens**.
 
-Podés seleccionarlo interactivamente o pasar la flag directa:
+You can choose it interactively or pass the flag directly:
 ```bash
 ../agent-harness/init.sh --profile lite
 ../agent-harness/init.sh --profile balanced
@@ -72,34 +72,34 @@ Podés seleccionarlo interactivamente o pasar la flag directa:
 ```
 
 ### Smart Zero-Copy & Self-Deletion
-- **Zero-Copy**: Al correrlo remotamente (`../agent-harness/init.sh`), despliega todos los archivos, guardrails y adaptadores sin que tengas que copiar nada a mano.
-- **Protección de la plantilla maestra**: El `init.sh` original de `agent-harness` **nunca se borra**. Solo ofrece eliminar la copia local del proyecto destino.
+- **Zero-Copy**: When executed remotely (`../agent-harness/init.sh`), deploys all files, guardrails, and adapters without manual copying.
+- **Master Template Protection**: The master `init.sh` in `agent-harness` **is never deleted**. It only offers to delete the local project copy.
 
-### Actualizar repositorios existentes (`./update.sh`)
-Si ya tenías proyectos usando una versión previa de `agent-harness` y querés incorporar las últimas mejoras (Zero-Fluff communication, ADRs, Grilling preventivo, Ubiquitous Language) sin perder nada:
+### Updating Existing Repositories (`./update.sh`)
+To upgrade existing projects with the latest harness features (Zero-Fluff communication, ADRs, Preventive Grilling, Ubiquitous Language, Token Profiles) without losing any project data:
 
-**Opción A — Desde agent-harness hacia cualquier proyecto:**
+**Option A — From agent-harness targeting any project:**
 ```bash
-./update.sh ../mi-proyecto-existente
-# Podés pasar múltiples proyectos en una sola línea:
-# ./update.sh ../proyecto-1 ../proyecto-2
+./update.sh ../my-existing-project
+# You can pass multiple projects in a single run:
+# ./update.sh ../project-1 ../project-2
 ```
 
-**Opción B — Desde adentro de tu proyecto existente:**
+**Option B — Directly from inside your target project:**
 ```bash
-cd mi-proyecto-existente
-/ruta/hacia/agent-harness/update.sh
-# O alternativamente con init.sh:
-# /ruta/hacia/agent-harness/init.sh --update
+cd my-existing-project
+/path/to/agent-harness/update.sh
+# Or alternatively via init.sh:
+# /path/to/agent-harness/init.sh --update
 ```
 
-**Garantías de la actualización:**
-- Actualiza los roles en `agents/` con los últimos protocolos.
-- Actualiza `AGENTS.md` (Zero-fluff communication), `CHECKPOINTS.md` y adaptadores de herramientas (`.cursorrules`, `CLAUDE.md`, `.windsurfrules`, `.github/copilot-instructions.md`).
-- Despliega `docs/adr/template.md` y `docs/context.md` (si faltaban).
-- **Preserva intactos**: tus tareas en `TASKS.md`, tu historial en `progress/`, tu repositorio Git, y las personalizaciones previas en `docs/architecture.md` o `docs/conventions.md`.
+**Update Guarantees:**
+- Updates agent role protocols in `agents/`.
+- Updates `AGENTS.md` (Zero-Fluff communication), `CHECKPOINTS.md`, and tool adapters (`.cursorrules`, `CLAUDE.md`, `.windsurfrules`, `.github/copilot-instructions.md`).
+- Deploys `docs/adr/template.md` and `docs/context.md` (if missing).
+- **Preserves 100% intact**: your tasks in `TASKS.md`, your session history in `progress/`, your Git repository, and any customizations in `docs/architecture.md` or `docs/conventions.md`.
 
-Una vez que termina en verde, **no volvés a ejecutar `init.sh`**. Abrís tu editor y empezás a vibecodear.
+Once complete and green, **you do not run `init.sh` again**. Open your editor and start vibecoding.
 
 
 ---
@@ -150,7 +150,7 @@ All agent roles reside in `agents/` and are read directly by your AI tool:
 ║                                                             ║
 ╚═════════════════════════════════════════════════════════════╝
                                │
-            ¿Changes needed?   │ Both verdicts: APPROVED & SECURE
+             Changes needed?   │ Both verdicts: APPROVED & SECURE
        (Max 3 review cycles)   ▼
 ┌─────────────────────────────────────────────────────────────┐
 │ 4. GIT COMMIT & CLEAN CLOSURE                               │

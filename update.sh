@@ -14,15 +14,15 @@ NC='\033[0m'
 
 if [ $# -eq 0 ]; then
     if [ "$CURRENT_DIR" = "$SCRIPT_DIR" ]; then
-        echo -e "${YELLOW}${BOLD}Uso:${NC}"
-        echo -e "  ./update.sh <ruta-a-tu-proyecto> [<otro-proyecto>...]"
+        echo -e "${YELLOW}${BOLD}Usage:${NC}"
+        echo -e "  ./update.sh <path-to-project> [<another-project>...]"
         echo ""
-        echo -e "Ejemplos:"
-        echo -e "  ./update.sh ../mi-proyecto"
-        echo -e "  ./update.sh /ruta/hacia/otro-repo"
+        echo -e "Examples:"
+        echo -e "  ./update.sh ../my-project"
+        echo -e "  ./update.sh /path/to/another-repo"
         echo ""
-        echo -e "${BLUE}O directamente desde la carpeta de tu proyecto destino:${NC}"
-        echo -e "  cd mi-proyecto"
+        echo -e "${BLUE}Or directly from inside your target project directory:${NC}"
+        echo -e "  cd my-project"
         echo -e "  $SCRIPT_DIR/update.sh"
         exit 1
     else
@@ -35,18 +35,18 @@ fi
 for TARGET in "${TARGETS[@]}"; do
     TARGET_ABS="$(cd "$TARGET" 2>/dev/null && pwd -P || true)"
     if [ -z "$TARGET_ABS" ] || [ ! -d "$TARGET_ABS" ]; then
-        echo -e "${RED}✗ Error: Directorio no encontrado:${NC} $TARGET"
+        echo -e "${RED}✗ Error: Directory not found:${NC} $TARGET"
         continue
     fi
 
     if [ "$TARGET_ABS" = "$SCRIPT_DIR" ]; then
-        echo -e "${YELLOW}⚠ Omitiendo la plantilla maestra de agent-harness.${NC}"
+        echo -e "${YELLOW}⚠ Skipping master agent-harness template repository.${NC}"
         continue
     fi
 
     echo ""
     echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
-    echo -e "  ${BLUE}Actualizando:${NC} ${BOLD}$TARGET_ABS${NC}"
+    echo -e "  ${BLUE}Updating:${NC} ${BOLD}$TARGET_ABS${NC}"
     echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
 
     (
