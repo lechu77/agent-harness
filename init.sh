@@ -70,7 +70,7 @@ inline_pick() {
                 fi
             done
         fi
-        echo "$default_idx"
+        echo "-1"
         return
     fi
 
@@ -160,6 +160,11 @@ if [ -z "$HARNESS_PROFILE" ]; then
             "Full — Full autonomous pipeline (4 agents, ADRs, context, exhaustive checkpoints)"
         )
         P_IDX=$(inline_pick "Select Harness Profile" 0 "${PROFILE_OPTIONS[@]}")
+        if [ "$P_IDX" = "-1" ]; then
+            echo ""
+            echo -e "${YELLOW}Setup cancelled by user (Esc).${NC}"
+            exit 0
+        fi
         case "$P_IDX" in
             1) HARNESS_PROFILE="lite" ;;
             2) HARNESS_PROFILE="security" ;;
@@ -371,6 +376,11 @@ if [ -d ".git" ]; then
             "Clean slate: reset everything and start fresh (new repository 0km)"
         )
         GIT_CHOICE_IDX=$(inline_pick "Git Repository Action" 0 "${GIT_OPTIONS[@]}")
+        if [ "$GIT_CHOICE_IDX" = "-1" ]; then
+            echo ""
+            echo -e "${YELLOW}Setup cancelled by user (Esc).${NC}"
+            exit 0
+        fi
         if [ "$GIT_CHOICE_IDX" -eq 1 ]; then
             echo -e "${BLUE}▸ Resetting Git repository...${NC}"
             rm -rf .git
