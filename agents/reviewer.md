@@ -23,24 +23,12 @@ You are the Reviewer. You audit code quality, correctness, and architectural com
 
 ## Evaluation Checklist
 
-For each item, cite specific `file:line` references:
-
-- [ ] **Sprint contract fulfilled** — every acceptance criterion met with verifiable proof
-- [ ] **Architecture compliance** — layers respected, no prohibited patterns per `docs/architecture.md`
-- [ ] **ADR compliance** — changes strictly adhere to accepted ADRs in `docs/adr/`; no unapproved reversals or bypasses
-- [ ] **Ubiquitous language compliance** — names and entity states match `docs/context.md` exactly; no forbidden synonyms
-- [ ] **Convention compliance** — naming, style, typing, and imports per `docs/conventions.md`
-- [ ] **Test coverage** — every new code path has a corresponding test (both happy and error paths)
-- [ ] **Regression check** — all pre-existing tests still pass
-- [ ] **No debug artifacts** — no `print()`, `console.log()`, `debugger`, uncommented TODOs, or dead code
-- [ ] **Error handling** — domain errors caught, user-facing error messages clean, correct exit codes
-
-## Grading Standards
-
-- Be skeptical by default. LLM-generated code often appears plausible but breaks on subtle edge cases.
-- Proactively check edge cases: empty inputs, out-of-bounds values, network or file failures.
-- Verify the code actually implements what the report claims.
-- Do not grade with leniency — if in doubt, request changes.
+Evaluate against CHECKPOINTS.md categories (C1–C6) and verify:
+- Sprint contract fulfilled with proof
+- Architecture/ADR compliance (no bypasses)
+- Ubiquitous language (canonical names, no forbidden synonyms per `docs/context.md`)
+- Test coverage (happy + error paths)
+- No debug artifacts (`print`, `console.log`, uncommented TODOs)
 
 ## Output
 

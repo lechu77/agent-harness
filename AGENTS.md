@@ -72,15 +72,11 @@ profiles/full/AGENTS.md      → ~2,500 tokens — multi-module, formal ADRs, fu
 
 ```
 1. Leader reads user request & TASKS.md.
-2. Preventive check: If critical bifurcation or destructive ambiguity exists, ask 2-3 structured questions. Else proceed autonomously.
-3. If structural architectural decisions are made, Leader documents an ADR in docs/adr/.
-4. If tasks are needed, Leader adds them to TASKS.md.
-5. Leader selects the highest-priority pending task ([ ]).
-6. Marks it in progress: [/] in TASKS.md.
-7. Logs task and brief plan in progress/current.md.
-8. Delegates to Implementer -> Reviewer -> Security Reviewer.
-9. Upon full approval, marks task completed: [x] in TASKS.md.
-10. Moves summary from progress/current.md into progress/history.md.
+2. If critical architectural ambiguity exists, ask 2-3 structured questions. Else proceed autonomously.
+3. Document structural decisions in docs/adr/ if non-trivial.
+4. Add/update tasks in TASKS.md. Select highest-priority pending task, mark [/].
+5. Delegate to Implementer → Reviewer → Security Reviewer.
+6. Mark [x] after APPROVED + SECURE. Append summary to progress/history.md.
 ```
 
 ---
@@ -95,15 +91,7 @@ profiles/full/AGENTS.md      → ~2,500 tokens — multi-module, formal ADRs, fu
 
 ## 6. Single-Agent Mode (Cursor, Copilot, Windsurf, Aider)
 
-If your AI tool does not support subagents or multi-agent delegation, operate as a single agent that sequentially assumes each role:
-
-1. **Leader phase**: Read `TASKS.md`, select the next pending task, mark it `[/]`, write your plan in `progress/current.md`.
-2. **Implementer phase**: Write production code and tests for exactly 1 task. Follow `docs/architecture.md` and `docs/conventions.md`.
-3. **Self-Review phase**: Re-read your own code adversarially. Run the full test suite. Check against `CHECKPOINTS.md` criteria C1–C6.
-4. **Security Review phase**: Run the security checklist from `agents/security-reviewer.md`. Scan for secrets, unauthorized egress, path leaks.
-5. **Closure phase**: Mark the task `[x]` in `TASKS.md`. Git commit. Append summary to `progress/history.md`. Reset `progress/current.md`.
-
-The same quality standards apply regardless of whether you are one agent or four.
+For tools without subagent support, operate sequentially as one agent assuming each role: Leader (plan) → Implementer (build + test) → Self-Review (audit, run tests, check CHECKPOINTS.md) → Security Review (scan per `docs/security.md`) → Closure (mark [x], commit, update history).
 
 ---
 

@@ -38,21 +38,14 @@ Before writing any code, record in `progress/current.md`:
 
 ## Git Commit Protocol
 
-After all tests pass and before writing your implementation report:
-1. Stage changes: `git add -A`
-2. Commit with a descriptive message: `git commit -m "feat(<task_slug>): <concise description of what was built>"`
-3. If you made intermediate commits during implementation, that is acceptable. The final commit must leave the repo in a clean, working state.
+After all tests pass: `git add -A && git commit -m "feat(<task_slug>): <description>"`. Final commit must leave repo in clean, working state.
 
 ## Recovery Protocol
 
-If the dev server crashes, tests fail unexpectedly, or your changes break existing functionality:
-1. **Stop immediately.** Do not continue implementing on top of broken code.
-2. Run `git diff` to identify what you changed.
-3. Run `git stash` to save your changes, then verify the app works without them.
-4. If the app works after stashing: `git stash pop` and fix the specific breaking change.
-5. If the app was already broken before your changes: document this in `progress/current.md` and notify the Leader.
-6. Use `git checkout -- <file>` to revert specific files if needed.
-7. Never invent workarounds to mask a broken state.
+If tests fail or changes break functionality:
+1. Stop. Run `git diff`, then `git stash` to isolate your changes.
+2. Verify baseline works without your changes. If broken before you started, document in `progress/current.md`.
+3. `git stash pop` and fix the specific issue. Use `git checkout -- <file>` to revert if needed.
 
 ## Output
 
