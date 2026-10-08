@@ -47,11 +47,12 @@ inline_pick() {
         return
     fi
 
-    # Check if fzf is available and connected to interactive terminal
-    if command -v fzf >/dev/null 2>&1 && [ -t 0 ] && [ -t 1 ]; then
+    # Check if fzf is available and a controlling terminal exists
+    if command -v fzf >/dev/null 2>&1 && [ -c /dev/tty ]; then
         local fzf_input
         fzf_input=$(printf "%s\n" "${options[@]}")
         local selected
+        # fzf writes its TUI to /dev/tty and outputs selected item to stdout
         selected=$(printf "%s" "$fzf_input" | fzf \
             --prompt="${title} › " \
             --height=40% \
@@ -62,7 +63,8 @@ inline_pick() {
             --no-sort \
             --cycle \
             --header="↑↓ navigate   Enter select   Esc cancel" \
-            --header-first || true)
+            --header-first \
+            2>/dev/tty </dev/tty || true)
 
         if [ -n "$selected" ]; then
             for i in "${!options[@]}"; do
@@ -76,7 +78,7 @@ inline_pick() {
         return
     fi
 
-    # Fallback to styled numbered prompt if fzf not available or non-interactive
+    # Fallback to styled numbered prompt if fzf not available
     echo "" >&2
     echo -e "${YELLOW}▸ ${title}:${NC}" >&2
     for i in "${!options[@]}"; do
@@ -85,13 +87,16 @@ inline_pick() {
         echo -e "  ${marker} [$((i + 1))] ${options[$i]}" >&2
     done
 
-    if [ -t 0 ]; then
-        local raw
-        read -r -p "  Select [1-${#options[@]}, default: $((default_idx + 1))]: " raw
-        if [[ "$raw" =~ ^[0-9]+$ ]] && [ "$raw" -ge 1 ] && [ "$raw" -le "${#options[@]}" ]; then
-            echo "$((raw - 1))"
-            return
-        fi
+    local raw=""
+    if [ -c /dev/tty ]; then
+        read -r -p "  Select [1-${#options[@]}, default: $((default_idx + 1))]: " raw < /dev/tty || true
+    elif [ -t 0 ]; then
+        read -r -p "  Select [1-${#options[@]}, default: $((default_idx + 1))]: " raw || true
+    fi
+
+    if [[ "$raw" =~ ^[0-9]+$ ]] && [ "$raw" -ge 1 ] && [ "$raw" -le "${#options[@]}" ]; then
+        echo "$((raw - 1))"
+        return
     fi
 
     echo "$default_idx"
@@ -151,7 +156,7 @@ fi
 
 # ── Profile Selection & Normalization ──────────────────────
 if [ -z "$HARNESS_PROFILE" ]; then
-    if [ "$IS_UPDATE_MODE" = false ] && [ -t 0 ]; then
+    if [ "$IS_UPDATE_MODE" = false ] && { [ -t 0 ] || [ -c /dev/tty ]; }; then
         PROFILE_OPTIONS=(
             "Balanced [Default] — Low token footprint (~460 tks), self-review + tests + local security"
             "Lite — Ultra-lightweight (~380 tks), 1 direct agent for forks, scripts & MVPs"
@@ -363,7 +368,7 @@ if [ -d ".git" ]; then
         CREATE_BASELINE_COMMIT=true
     elif [ "$FORCE_KEEP" = true ]; then
         echo -e "  ${GREEN}✓${NC} Git repository preserved intact (--keep-git)"
-    elif [ -t 0 ]; then
+    elif [ -t 0 ] || [ -c /dev/tty ]; then
         echo -e "${YELLOW}▸ Existing Git repository detected${NC}${REMOTE_URL:+ ($REMOTE_URL)}."
         GIT_OPTIONS=(
             "Keep existing repository intact (preserve history & remotes) [default]"
@@ -769,7 +774,7 @@ if [ $FAIL -eq 0 ]; then
         # Running directly inside the harness/project directory
         if [ "$IS_TEMPLATE_REPO" = true ]; then
             echo -e "  ${GREEN}✓${NC} Master template repository preserved (init.sh retained)."
-        elif [ -t 0 ]; then
+        elif [ -t 0 ] || [ -c /dev/tty ]; then
             echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
             DEL_OPTIONS=(
                 "Keep init.sh in repository [default]"
