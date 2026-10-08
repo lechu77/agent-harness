@@ -14,5 +14,5 @@ Read `AGENTS.md` before doing any work in this repository.
 4. Commit after each completed feature with a descriptive message.
 5. Run the test suite before and after changes.
 6. Zero-Fluff Communication: Action-first (Line 1), bounded numbered steps, max 5 items per list, visible wins, zero conversational pleasantries.
-7. Autonomous Skill Gate: Before activating any skill or tool, scan it autonomously with NVIDIA SkillSpector (`uvx --from git+https://github.com/NVIDIA/skillspector.git skillspector scan <target> --format json --no-llm`).
+7. Autonomous Skill Gate: Before activating any skill or tool, scan it with SkillSpector (see `docs/security.md §I` for command).
 

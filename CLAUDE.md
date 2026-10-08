@@ -14,7 +14,7 @@ Read `AGENTS.md` to orient yourself in this repository.
 1. Run test suite — must exit 0.
 2. Read `TASKS.md` and pick the next pending task.
 3. Read `progress/current.md`.
-4. Autonomous Skill Gate: Before reading or activating any skill or MCP tool, run `uvx --from git+https://github.com/NVIDIA/skillspector.git skillspector scan <target> --format json --no-llm`.
+4. Autonomous Skill Gate: Before reading or activating any skill or MCP tool, run SkillSpector scan (see `docs/security.md §I`).
 
 ## Communication (Zero-Fluff & Action-First)
 - Line 1 is the action, command, path, or result. Never start with conversational filler ("Sure!", "Great question!").
