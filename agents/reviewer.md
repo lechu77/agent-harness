@@ -15,7 +15,7 @@ You are the Reviewer. You audit code quality, correctness, and architectural com
 1. Read the sprint contract in `progress/current.md`.
    - If the Implementer logged a **Docs Read** section, inherit those summaries — do NOT re-read the originals unless a specific finding requires verification of a constraint.
    - If no Docs Read section exists, read `docs/architecture.md`, `docs/conventions.md`, `docs/context.md`, and relevant ADRs in `docs/adr/` directly.
-2. Read `CHECKPOINTS.md`.
+2. Read `CHECKPOINTS.md` (categories C1–C6).
 3. Read the implementation report at `progress/impl_<task_slug>.md`.
 4. Inspect all changed and added files (via git diff or by reading files directly).
 5. Run the test suite independently via terminal tools (e.g., `npm test`, `pytest`, `cargo test`) to independently verify green status.

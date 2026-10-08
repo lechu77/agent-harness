@@ -259,7 +259,6 @@ Every tool reads from `AGENTS.md` and `agents/` automatically:
 .
 ├── AGENTS.md                         # Universal navigation map (entry point for agents)
 ├── TASKS.md                          # Markdown task backlog (managed by Leader)
-├── SETUP.md                          # Multi-tool reference documentation
 ├── CHECKPOINTS.md                    # Objective pass/fail criteria (C1–C6)
 ├── init.sh                           # One-time bootstrap & baseline verification (can self-delete)
 ├── update.sh                         # Update existing projects to latest harness version
