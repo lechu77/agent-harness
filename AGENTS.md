@@ -5,6 +5,23 @@
 
 ---
 
+## 0. Profile Detection (Token Budget Selection)
+
+Before reading further, check whether a `profiles/` directory exists in the project root:
+
+```
+profiles/lite/AGENTS.md      → ~400 tokens  — scripts, forks, 1-file fixes
+profiles/balanced/AGENTS.md  → ~800 tokens  — standard features, day-to-day work
+profiles/security/AGENTS.md  → ~1,500 tokens — auth, payments, PII, external APIs
+profiles/full/AGENTS.md      → ~2,500 tokens — multi-module, formal ADRs, full review pipeline
+```
+
+**If a profile file exists** at the project root (copied by `init.sh`), read it and follow its workflow instead of this file's §1–§6. The profile is the active operating mode.
+
+**If no profile file exists** at the project root (you are inside the `agent-harness` template repo itself), continue reading §1–§6 below.
+
+---
+
 ## 1. Core Workflow
 
 1. **User Prompt**: The user tells the AI in chat what they want to build.

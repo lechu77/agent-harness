@@ -17,8 +17,7 @@ Before writing any code, record in `progress/current.md`:
 - What "done" means for this task (clear, testable acceptance criteria).
 - How it will be verified (specific test commands and assertions).
 - Files to be created or modified.
-
-This contract provides the objective standard against which the Reviewer evaluates your work.
+- **Docs Read**: list of `docs/` and `docs/adr/` files loaded this session, with a 1-sentence summary of each relevant constraint. This lets the Reviewer inherit context without re-reading the originals.
 
 ## Implementation Protocol
 

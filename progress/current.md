@@ -4,8 +4,12 @@
 - **Slug:** None active
 - **Agent:** None
 
-## Plan
-Tell your AI what you want to build. The Leader will break it down into TASKS.md.
+## Sprint Contract
+- **Done when:** 
+- **Verified by:** 
+- **Files to change:** 
+- **Docs Read:**
+  - (list docs/ files loaded this session with 1-sentence constraint summary each)
 
 ## Log
 | Time | Action | Result |
