@@ -24,7 +24,7 @@
 |--------------------------------|-----------------------------------------------------------|------------------------|
 | `TASKS.md`                     | Task backlog (`[ ]` pending, `[/]` active, `[x]` done)    | Always, at startup     |
 | `progress/current.md`          | Active task scratchpad and live logs                      | Always, at startup     |
-| `progress/history.md`          | Append-only log of completed tasks                        | For historical context |
+| `progress/history.md`          | Append-only log of completed tasks                        | Last 3 entries only (on startup) |
 | `docs/context.md`              | Domain glossary, canonical entities & anti-synonyms       | Before planning, implementing, or reviewing |
 | `docs/adr/`                    | Architecture Decision Records (`template.md` & ADR logs)  | When deciding, building, or auditing architecture |
 | `docs/architecture.md`         | System design standards and prohibited patterns           | Before implementing    |

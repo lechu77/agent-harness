@@ -18,6 +18,6 @@
 - No suppressing exceptions silently (do not use empty catch blocks).
 
 ## Project-Specific Architecture
-{{DESCRIBE YOUR ARCHITECTURE HERE: layers, modules, data flow}}
 
-Update this section when the project's architecture crystallizes.
+> Fill this section when the project's architecture crystallizes (first task or first ADR).
+> Describe: layers, modules, data flow, and any framework-specific constraints.

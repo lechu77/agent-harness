@@ -61,4 +61,4 @@ Consistent patterns reduce LLM prediction errors. Deviations from established pa
 
 ## Project-Specific Conventions
 
-{{ADD PROJECT-SPECIFIC CONVENTIONS HERE}}
+> Fill this section on first task. Add language-specific rules, framework constraints, or naming patterns unique to this project.
