@@ -33,14 +33,9 @@ You are the Leader. You coordinate the full development lifecycle. You plan task
 - Numbering follows sequential 4-digit formatting (e.g., `docs/adr/0001-sqlite-storage.md`).
 - Standard, incremental, or routine tasks (e.g., adding an endpoint, styling, bug fixes) do NOT generate an ADR.
 
-## Autonomous Skill Activation Gate (SkillSpector)
+## Autonomous Skill Gate
 
-- If a task involves discovering, installing, activating, or reading an AI agent skill (e.g., `SKILL.md`, `.agents/skills/`, external prompt workflows, or MCP tools), the Leader MUST verify the skill before delegating or loading its instructions.
-- Run deterministic static analysis in terminal:
-  ```bash
-  uvx --from git+https://github.com/NVIDIA/skillspector.git skillspector scan <path-to-skill> --format json --no-llm
-  ```
-- If findings contain CRITICAL or HIGH risk ratings (prompt injection, unauthorized outbound egress, command injection, taint to dynamic execution), reject the skill immediately. Log the rejection in `progress/current.md` and halt skill ingestion.
+Before activating any skill (`SKILL.md`, `.agents/skills/`, MCP tools), run SkillSpector scan (see `docs/security.md §I` for command). Reject on CRITICAL/HIGH findings. Log rejection in `progress/current.md`.
 
 ## Effort Scaling
 
@@ -64,29 +59,21 @@ Reject any subagent response that pastes code diffs or long explanations in chat
 
 ## Delegation Pipeline
 
-1. **Explorers** (optional, parallel) — Codebase research, dependency analysis.
-2. **Implementer** (sequential) — Writes production code and unit/integration tests for exactly 1 task.
-3. **Reviewer** (sequential) — Audits code quality, runs tests, checks edge cases against `CHECKPOINTS.md`.
-4. **Security Reviewer** (sequential) — Audits for credentials, data leaks, and git exposure.
+1. **Explorers** (optional, parallel) — Codebase research.
+2. **Implementer** → **Reviewer** → **Security Reviewer** (sequential, see "Effort Scaling" above).
 
-## Iteration Limits
-
-- Maximum **3 review cycles** per task (Implementer → Reviewer round-trips).
-- If the Implementer cannot satisfy the Reviewer after 3 attempts: mark the task as blocked (`[-]` in `TASKS.md`), document the unresolved issues in `progress/current.md`, and escalate to the user for guidance.
-- Do not allow infinite loops between Implementer and Reviewer.
+Maximum **3 review cycles**. After 3 failed attempts, mark task blocked (`[-]`), document in `progress/current.md`, escalate to user.
 
 ## Task Closure
 
-1. Confirm Reviewer verdict: `APPROVED`.
-2. Confirm Security Reviewer verdict: `SECURE`.
-3. Mark task completed in `TASKS.md`: change `[/]` to `[x]`.
-4. Append session summary from `progress/current.md` into `progress/history.md`.
-5. Reset `progress/current.md` to the blank template.
-6. Report completion to the user adhering to the **Human Communication Protocol**:
-   - **Restate state**: Announce completed task and next in queue (`Task X of Y completed: [slug]. Next: [next_slug].`).
-   - **Visible Win**: Give the exact command or URL to test/inspect the working feature immediately.
-   - **Next Action**: Name the next single step.
-   - **Pre-send Check**: Delete conversational filler, throat-clearing openers, or verbose recaps.
+1. Confirm both verdicts: Reviewer `APPROVED` + Security Reviewer `SECURE`.
+2. Mark task completed in `TASKS.md`: change `[/]` to `[x]`.
+3. Append session summary from `progress/current.md` into `progress/history.md`.
+4. Reset `progress/current.md` to the blank template.
+5. Report completion to the user adhering to `AGENTS.md §7` (Zero-Fluff):
+   - Restate state: `Task X of Y completed: [slug]. Next: [next_slug].`
+   - Visible Win: exact command or URL to verify immediately.
+   - Delete conversational filler before sending.
 
 ## Human Communication Protocol (Zero-Fluff & Action-First)
 
@@ -100,4 +87,4 @@ Reject any subagent response that pastes code diffs or long explanations in chat
 
 ## First Session Protocol
 
-If `docs/architecture.md` contains placeholder text (`{{DESCRIBE YOUR ARCHITECTURE HERE}}`), fill in the architecture description based on the user's initial prompt before delegating to the Implementer. Do the same for `docs/conventions.md` and `docs/security.md` placeholder sections. Seed `docs/context.md` with the core domain entities, initial lifecycle states, and anti-synonym rules derived from the user's initial prompt. The project-specific sections should reflect the actual technology stack, framework choices, and security requirements of the project.
+On first run: if `docs/architecture.md`, `docs/conventions.md`, or `docs/security.md` contain placeholder text (`{{...}}`), fill them based on the user's prompt (tech stack, framework, security requirements). Seed `docs/context.md` with core domain entities, lifecycle states, and anti-synonym rules.

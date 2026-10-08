@@ -1,9 +1,5 @@
 # Code Conventions
 
-## Why Conventions Matter for AI Agents
-
-Consistent patterns reduce LLM prediction errors. Deviations from established patterns cause cascading style drift across generated code. These rules exist to keep AI-generated code predictable and maintainable.
-
 ## Universal Rules (all languages)
 
 - One module = one responsibility.
