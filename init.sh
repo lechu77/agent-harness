@@ -35,6 +35,68 @@ check() {
 file_exists() { [ -f "$1" ]; }
 dir_exists() { [ -d "$1" ]; }
 
+# ── Interactive TUI Picker (WhisperNinja fzf style) ────────
+inline_pick() {
+    local title="$1"
+    local default_idx="${2:-0}"
+    shift 2
+    local options=("$@")
+
+    if [ ${#options[@]} -eq 0 ]; then
+        echo "-1"
+        return
+    fi
+
+    # Check if fzf is available and connected to interactive terminal
+    if command -v fzf >/dev/null 2>&1 && [ -t 0 ] && [ -t 1 ]; then
+        local fzf_input
+        fzf_input=$(printf "%s\n" "${options[@]}")
+        local selected
+        selected=$(printf "%s" "$fzf_input" | fzf \
+            --prompt="${title} › " \
+            --height=40% \
+            --border=rounded \
+            --color="fg:#cdd6f4,bg:#1e1e2e,hl:#89b4fa,prompt:#cba6f7,pointer:#f38ba8,header:#a6adc8,border:#585b70" \
+            --pointer="▶" \
+            --layout=reverse \
+            --no-sort \
+            --cycle \
+            --header="↑↓ navigate   Enter select   Esc cancel" \
+            --header-first || true)
+
+        if [ -n "$selected" ]; then
+            for i in "${!options[@]}"; do
+                if [ "${options[$i]}" = "$selected" ]; then
+                    echo "$i"
+                    return
+                fi
+            done
+        fi
+        echo "$default_idx"
+        return
+    fi
+
+    # Fallback to styled numbered prompt if fzf not available or non-interactive
+    echo "" >&2
+    echo -e "${YELLOW}▸ ${title}:${NC}" >&2
+    for i in "${!options[@]}"; do
+        local marker=" "
+        [ "$i" -eq "$default_idx" ] && marker="▶"
+        echo -e "  ${marker} [$((i + 1))] ${options[$i]}" >&2
+    done
+
+    if [ -t 0 ]; then
+        local raw
+        read -r -p "  Select [1-${#options[@]}, default: $((default_idx + 1))]: " raw
+        if [[ "$raw" =~ ^[0-9]+$ ]] && [ "$raw" -ge 1 ] && [ "$raw" -le "${#options[@]}" ]; then
+            echo "$((raw - 1))"
+            return
+        fi
+    fi
+
+    echo "$default_idx"
+}
+
 FORCE_CLEAN=false
 FORCE_KEEP=false
 IS_UPDATE_MODE=false
@@ -90,18 +152,17 @@ fi
 # ── Profile Selection & Normalization ──────────────────────
 if [ -z "$HARNESS_PROFILE" ]; then
     if [ "$IS_UPDATE_MODE" = false ] && [ -t 0 ]; then
-        echo ""
-        echo -e "${YELLOW}▸ Select Harness Profile:${NC}"
-        echo -e "  1) ${BOLD}Balanced${NC} [Default] — Fast, low token footprint (~460 tks), self-review + tests + local security hook"
-        echo -e "  2) ${BOLD}Lite${NC} — Ultra-lightweight (~380 tks), 1 direct agent, ideal for forks, scripts & MVPs"
-        echo -e "  3) ${BOLD}Security${NC} — Hardened perimeter (~480 tks), zero-trust, dedicated security reviewer"
-        echo -e "  4) ${BOLD}Full${NC} — Full autonomous pipeline (4 agents, ADRs, context, exhaustive checkpoints)"
-        echo -ne "${BOLD}  Option [1-4, default: 1]: ${NC}"
-        read -r P_CHOICE
-        case "$P_CHOICE" in
-            2|lite|Lite) HARNESS_PROFILE="lite" ;;
-            3|security|Security) HARNESS_PROFILE="security" ;;
-            4|full|Full) HARNESS_PROFILE="full" ;;
+        PROFILE_OPTIONS=(
+            "Balanced [Default] — Low token footprint (~460 tks), self-review + tests + local security"
+            "Lite — Ultra-lightweight (~380 tks), 1 direct agent for forks, scripts & MVPs"
+            "Security — Hardened perimeter (~480 tks), zero-trust, dedicated security reviewer"
+            "Full — Full autonomous pipeline (4 agents, ADRs, context, exhaustive checkpoints)"
+        )
+        P_IDX=$(inline_pick "Select Harness Profile" 0 "${PROFILE_OPTIONS[@]}")
+        case "$P_IDX" in
+            1) HARNESS_PROFILE="lite" ;;
+            2) HARNESS_PROFILE="security" ;;
+            3) HARNESS_PROFILE="full" ;;
             *) HARNESS_PROFILE="balanced" ;;
         esac
     else
@@ -304,12 +365,12 @@ if [ -d ".git" ]; then
         echo -e "  ${GREEN}✓${NC} Git repository preserved intact (--keep-git)"
     elif [ -t 0 ]; then
         echo -e "${YELLOW}▸ Existing Git repository detected${NC}${REMOTE_URL:+ ($REMOTE_URL)}."
-        echo -e "  What would you like to do with the Git repository?"
-        echo -e "    1) Keep existing repository intact (preserve history & remotes) [default]"
-        echo -e "    2) Clean slate: reset everything and start fresh (new repository 0km)"
-        echo -ne "${BOLD}  Option [1/2, default: 1]: ${NC}"
-        read -r GIT_CHOICE
-        if [[ "$GIT_CHOICE" == "2" ]]; then
+        GIT_OPTIONS=(
+            "Keep existing repository intact (preserve history & remotes) [default]"
+            "Clean slate: reset everything and start fresh (new repository 0km)"
+        )
+        GIT_CHOICE_IDX=$(inline_pick "Git Repository Action" 0 "${GIT_OPTIONS[@]}")
+        if [ "$GIT_CHOICE_IDX" -eq 1 ]; then
             echo -e "${BLUE}▸ Resetting Git repository...${NC}"
             rm -rf .git
             git init -b main > /dev/null 2>&1 || git init > /dev/null 2>&1
@@ -710,9 +771,12 @@ if [ $FAIL -eq 0 ]; then
             echo -e "  ${GREEN}✓${NC} Master template repository preserved (init.sh retained)."
         elif [ -t 0 ]; then
             echo -e "${BOLD}══════════════════════════════════════════════════════════${NC}"
-            echo -ne "${BOLD}Since init.sh is only run once, do you want to delete init.sh? [y/N]: ${NC}"
-            read -r DEL_INIT
-            if [[ "$DEL_INIT" =~ ^[Yy]$ ]]; then
+            DEL_OPTIONS=(
+                "Keep init.sh in repository [default]"
+                "Delete init.sh (clean repo, one-time setup complete)"
+            )
+            DEL_CHOICE_IDX=$(inline_pick "Since init.sh runs once, do you want to delete it?" 0 "${DEL_OPTIONS[@]}")
+            if [ "$DEL_CHOICE_IDX" -eq 1 ]; then
                 echo -e "  ${GREEN}✓${NC} Removing init.sh..."
                 rm -f "$CURRENT_DIR/init.sh"
                 echo -e "  ${GREEN}✓${NC} init.sh deleted. Happy vibecoding!"
