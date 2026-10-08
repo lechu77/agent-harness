@@ -46,8 +46,7 @@ if [ ${#ARGS[@]} -eq 0 ]; then
         done
 
         if [ ${#CANDIDATES[@]} -gt 0 ] && command -v fzf >/dev/null 2>&1 && [ -c /dev/tty ]; then
-            fzf_input=$(printf "%s\n" "${CANDIDATES[@]}")
-            SELECTED_NAMES=$(printf "%s" "$fzf_input" | fzf \
+            SELECTED_NAMES=$(printf "%s\n" "${CANDIDATES[@]}" | fzf \
                 --multi \
                 --prompt="Update Projects › " \
                 --height=45% \
@@ -57,8 +56,7 @@ if [ ${#ARGS[@]} -eq 0 ]; then
                 --layout=reverse \
                 --cycle \
                 --header="Tab multi-select   ↑↓ navigate   Enter confirm   Esc cancel" \
-                --header-first \
-                2>/dev/tty </dev/tty || true)
+                --header-first || true)
 
             if [ -n "$SELECTED_NAMES" ]; then
                 TARGETS=()

@@ -49,11 +49,8 @@ inline_pick() {
 
     # Check if fzf is available and a controlling terminal exists
     if command -v fzf >/dev/null 2>&1 && [ -c /dev/tty ]; then
-        local fzf_input
-        fzf_input=$(printf "%s\n" "${options[@]}")
         local selected
-        # fzf writes its TUI to /dev/tty and outputs selected item to stdout
-        selected=$(printf "%s" "$fzf_input" | fzf \
+        selected=$(printf "%s\n" "${options[@]}" | fzf \
             --prompt="${title} › " \
             --height=40% \
             --border=rounded \
@@ -63,8 +60,7 @@ inline_pick() {
             --no-sort \
             --cycle \
             --header="↑↓ navigate   Enter select   Esc cancel" \
-            --header-first \
-            2>/dev/tty </dev/tty || true)
+            --header-first || true)
 
         if [ -n "$selected" ]; then
             for i in "${!options[@]}"; do
