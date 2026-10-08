@@ -114,10 +114,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         --profile|-p)
             HARNESS_PROFILE="$2"
+            PROFILE_FLAG_EXPLICIT="1"
             shift 2
             ;;
         --profile=*)
             HARNESS_PROFILE="${1#*=}"
+            PROFILE_FLAG_EXPLICIT="1"
             shift
             ;;
         --help|-h)
@@ -152,7 +154,11 @@ fi
 
 # ── Profile Selection & Normalization ──────────────────────
 if [ -z "$HARNESS_PROFILE" ]; then
-    if [ "$IS_UPDATE_MODE" = false ] && { [ -t 0 ] || [ -c /dev/tty ]; }; then
+    if [ "$IS_UPDATE_MODE" = true ]; then
+        # In update mode without explicit --profile: skip interactive picker.
+        # EFFECTIVE_PROFILE will detect the active profile from the target AGENTS.md header.
+        HARNESS_PROFILE="balanced"
+    elif [ "$IS_UPDATE_MODE" = false ] && { [ -t 0 ] || [ -c /dev/tty ]; }; then
         PROFILE_OPTIONS=(
             "Balanced [Default] — Low token footprint (~460 tks), self-review + tests + local security"
             "Lite — Ultra-lightweight (~380 tks), 1 direct agent for forks, scripts & MVPs"
@@ -204,12 +210,30 @@ if [ "$IS_EXTERNAL_RUN" = true ]; then
     fi
 
     # 1. Profile-specific AGENTS.md
-    if [ -f "$SCRIPT_DIR/profiles/$HARNESS_PROFILE/AGENTS.md" ]; then
-        cp "$SCRIPT_DIR/profiles/$HARNESS_PROFILE/AGENTS.md" "$CURRENT_DIR/AGENTS.md"
-        echo -e "  ${GREEN}✓${NC} Deployed AGENTS.md (${HARNESS_PROFILE} profile)"
+    # In update mode: only overwrite AGENTS.md if a --profile flag was explicitly passed,
+    # otherwise detect the active profile from the existing AGENTS.md header comment.
+    EFFECTIVE_PROFILE="$HARNESS_PROFILE"
+    if [ "$IS_UPDATE_MODE" = true ] && [ -z "${PROFILE_FLAG_EXPLICIT:-}" ] && [ -f "$CURRENT_DIR/AGENTS.md" ]; then
+        # Detect current profile from the existing AGENTS.md header (first 5 lines)
+        EXISTING_HEADER=$(head -5 "$CURRENT_DIR/AGENTS.md" 2>/dev/null | tr '[:upper:]' '[:lower:]')
+        if echo "$EXISTING_HEADER" | grep -q "lite"; then
+            EFFECTIVE_PROFILE="lite"
+        elif echo "$EXISTING_HEADER" | grep -q "security"; then
+            EFFECTIVE_PROFILE="security"
+        elif echo "$EXISTING_HEADER" | grep -q "balanced"; then
+            EFFECTIVE_PROFILE="balanced"
+        elif echo "$EXISTING_HEADER" | grep -q "full"; then
+            EFFECTIVE_PROFILE="full"
+        fi
+        echo -e "  ${BLUE}ℹ${NC} Detected active profile: ${BOLD}${EFFECTIVE_PROFILE}${NC} (pass --profile to change)"
+    fi
+
+    if [ -f "$SCRIPT_DIR/profiles/$EFFECTIVE_PROFILE/AGENTS.md" ]; then
+        cp "$SCRIPT_DIR/profiles/$EFFECTIVE_PROFILE/AGENTS.md" "$CURRENT_DIR/AGENTS.md"
+        echo -e "  ${GREEN}✓${NC} Updated AGENTS.md (${EFFECTIVE_PROFILE} profile)"
     elif [ -f "$SCRIPT_DIR/AGENTS.md" ]; then
         cp "$SCRIPT_DIR/AGENTS.md" "$CURRENT_DIR/AGENTS.md"
-        echo -e "  ${GREEN}✓${NC} Deployed AGENTS.md"
+        echo -e "  ${GREEN}✓${NC} Updated AGENTS.md"
     fi
 
     # 2. Agent roles (only for security and full profiles)
@@ -230,36 +254,44 @@ if [ "$IS_EXTERNAL_RUN" = true ]; then
     fi
 
     # 3. Docs directory (profile-dependent)
-    if [ "$HARNESS_PROFILE" = "full" ]; then
+    if [ "$HARNESS_PROFILE" = "full" ] || [ "$EFFECTIVE_PROFILE" = "full" ]; then
         if [ -d "$SCRIPT_DIR/docs" ]; then
             mkdir -p "$CURRENT_DIR/docs/adr"
+            # Always update harness-owned templates (not user-customized)
             cp "$SCRIPT_DIR/docs/adr/template.md" "$CURRENT_DIR/docs/adr/" 2>/dev/null || true
-            for doc in "$SCRIPT_DIR/docs"/*; do
-                docname="$(basename "$doc")"
-                if [ "$docname" != "adr" ]; then
-                    if [ ! -f "$CURRENT_DIR/docs/$docname" ]; then
-                        cp "$doc" "$CURRENT_DIR/docs/$docname" 2>/dev/null || true
-                    fi
+            cp "$SCRIPT_DIR/docs/verification.md" "$CURRENT_DIR/docs/" 2>/dev/null || true
+            if [ "$IS_UPDATE_MODE" = true ]; then
+                cp "$SCRIPT_DIR/docs/security.md" "$CURRENT_DIR/docs/" 2>/dev/null || true
+            fi
+            # Only deploy user-customizable docs on fresh install
+            for doc in architecture.md conventions.md context.md; do
+                if [ ! -f "$CURRENT_DIR/docs/$doc" ]; then
+                    cp "$SCRIPT_DIR/docs/$doc" "$CURRENT_DIR/docs/$doc" 2>/dev/null || true
                 fi
             done
-            echo -e "  ${GREEN}✓${NC} Deployed docs/ (full architecture, conventions, security, verification, context & ADRs)"
+            echo -e "  ${GREEN}✓${NC} Updated docs/ (full: architecture, conventions, security, verification, context & ADRs)"
         fi
-    elif [ "$HARNESS_PROFILE" = "security" ]; then
+    elif [ "$HARNESS_PROFILE" = "security" ] || [ "$EFFECTIVE_PROFILE" = "security" ]; then
         mkdir -p "$CURRENT_DIR/docs"
-        for doc in architecture.md conventions.md security.md; do
-            if [ -f "$SCRIPT_DIR/docs/$doc" ] && [ ! -f "$CURRENT_DIR/docs/$doc" ]; then
+        # Always update harness-owned docs
+        if [ "$IS_UPDATE_MODE" = true ]; then
+            cp "$SCRIPT_DIR/docs/security.md" "$CURRENT_DIR/docs/" 2>/dev/null || true
+        fi
+        # Only deploy user-customizable docs on fresh install
+        for doc in architecture.md conventions.md; do
+            if [ ! -f "$CURRENT_DIR/docs/$doc" ]; then
                 cp "$SCRIPT_DIR/docs/$doc" "$CURRENT_DIR/docs/$doc" 2>/dev/null || true
             fi
         done
-        echo -e "  ${GREEN}✓${NC} Deployed docs/ (architecture, conventions, security)"
-    elif [ "$HARNESS_PROFILE" = "balanced" ]; then
+        echo -e "  ${GREEN}✓${NC} Updated docs/ (architecture, conventions, security)"
+    elif [ "$HARNESS_PROFILE" = "balanced" ] || [ "$EFFECTIVE_PROFILE" = "balanced" ]; then
         mkdir -p "$CURRENT_DIR/docs"
         for doc in architecture.md conventions.md; do
-            if [ -f "$SCRIPT_DIR/docs/$doc" ] && [ ! -f "$CURRENT_DIR/docs/$doc" ]; then
+            if [ ! -f "$CURRENT_DIR/docs/$doc" ]; then
                 cp "$SCRIPT_DIR/docs/$doc" "$CURRENT_DIR/docs/$doc" 2>/dev/null || true
             fi
         done
-        echo -e "  ${GREEN}✓${NC} Deployed docs/ (architecture, conventions)"
+        echo -e "  ${GREEN}✓${NC} Preserved docs/ (architecture, conventions)"
     fi
 
     # 4. Progress directory (only if not lite)
@@ -420,8 +452,12 @@ if [ "$HARNESS_PROFILE" != "lite" ]; then
 - **Slug:** None active
 - **Agent:** None
 
-## Plan
-Tell your AI what you want to build. The Leader will break it down into TASKS.md.
+## Sprint Contract
+- **Done when:** 
+- **Verified by:** 
+- **Files to change:** 
+- **Docs Read:**
+  - (list docs/ files loaded this session with 1-sentence constraint summary each)
 
 ## Log
 | Time | Action | Result |
